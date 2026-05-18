@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+!.env.example
+
+# Local/source docs used for content prep, not runtime assets
+src/docs/
+
+# Temporary extraction files
+tmp_*
+config.bat
+.env
+supabase/.temp
+
+# Local member data (PII) - never commit
+data/
+
+# Dev-internal, kept local only - not for the published repo
+.claude/
+dev/
+scripts/
