@@ -28,7 +28,7 @@ const EventTicker = () => {
     }, []);
 
     const promoEvent = {
-        title: "We are also conducting a promotional membership drive where a pathologist can become member paying only 1500/- until Dec 31st 2026. This additional tab can be added and we will later delete",
+        title: "We are also conducting a promotional membership drive where a pathologist can become member paying only 1500/- until Dec 31st 2026."
     };
 
     // Use default static events if API returns empty or while loading to avoid empty bar
@@ -78,8 +78,6 @@ const EventTicker = () => {
                                 to="/academics-events"
                                 className="flex items-center gap-3 group hover:opacity-100 opacity-90 transition-opacity"
                             >
-                                <span className="w-3 h-3 rounded-full bg-[#D4AF37] animate-pulse"></span>
-
                                 <span className="font-bold text-lg md:text-xl group-hover:text-gold-light transition-colors text-gray-200">
                                     {event.title}
                                 </span>
