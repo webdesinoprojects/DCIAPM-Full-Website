@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { useAuth } from '../hooks/useAuth';
+import { logDevError } from '../lib/logger';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const AuthCallback = () => {
     };
 
     completeAuth().catch((error) => {
-      console.error('Unable to finish auth callback:', error);
+      logDevError('Unable to finish auth callback:', error);
       if (!cancelled) navigate('/login', { replace: true });
     });
 

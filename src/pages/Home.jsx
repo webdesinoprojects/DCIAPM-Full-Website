@@ -7,6 +7,7 @@ import SecretarySection from '../components/sections/SecretarySection'
 import QuickLinksSection from '../components/sections/QuickLinksSection'
 import EventTicker from '../components/sections/EventTicker'
 import CountdownTimer from '../components/common/CountdownTimer'
+import { logDevError } from '../lib/logger'
 
 const Home = () => {
   const [upcomingEvent, setUpcomingEvent] = useState(null);
@@ -53,7 +54,7 @@ const Home = () => {
         }
 
       } catch (error) {
-        console.error("Error fetching events for home:", error);
+        logDevError("Error fetching events for home:", error);
       }
     };
 

@@ -7,16 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "seed:auth": "node scripts/seed-demo-users.mjs",
-    "seed:elections": "node scripts/seed-demo-election.mjs",
-    "seed:gallery": "node scripts/seed-demo-gallery.mjs",
-    "seed:events": "node scripts/seed-demo-events.mjs",
-    "seed:publications": "node scripts/seed-publications-from-google-script.mjs",
-    "seed:governing-body": "node scripts/seed-governing-body.mjs",
-    "seed:membership": "node scripts/seed-demo-membership-applications.mjs",
-    "import:members": "node scripts/import-member-directory.mjs",
-    "smoke:auth": "node scripts/smoke-auth.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

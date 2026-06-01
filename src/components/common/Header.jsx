@@ -140,28 +140,28 @@ const Header = ({ currentPage }) => {
     // Wrap with a React Fragment
     <>
       <header className="bg-white/80 dark:bg-primary/80 backdrop-blur-sm sticky top-0 z-50 shadow-md">
-        <nav className="container mx-auto p-3 h-20 flex items-center">
+        <nav className="w-full px-4 sm:px-6 lg:px-8 py-3 min-h-[5rem] flex items-center">
           <div className="flex items-center justify-between w-full">
             <Link to="/" className="flex items-center space-x-3">
               <motion.img
                 alt="DC-IAPM Logo"
-                className="h-12 w-12" // Reduced logo size
+                className="h-12 w-12 flex-shrink-0"
                 src={Logo}
               />
-              <div className="font-display font-bold text-xs sm:text-sm text-primary dark:text-white md:block w-48 leading-tight">
+              <div className="font-display font-bold text-[11px] sm:text-xs text-primary dark:text-white md:block w-52 lg:w-56 xl:w-64 leading-tight">
                 Delhi Chapter of Indian Association of Pathologists and Microbiologists (DC-IAPM)
               </div>
             </Link>
 
-            <div className="hidden lg:flex items-center space-x-6">
+            <div className="hidden lg:flex items-center space-x-3 xl:space-x-6">
               {navLinks.map((link) =>
                 link.dropdown ? (
-                  <div key={link.label} className="relative group">
+                  <div key={link.label} className="relative group pb-3 -mb-3">
                     <motion.button
                       variants={navLinkVariants}
                       whileHover="hover"
                       // This logic correctly highlights the parent tab if a child page is active
-                      className={`nav-link font-semibold text-lg flex items-center transition-colors ${
+                      className={`nav-link font-semibold text-sm xl:text-lg flex items-center transition-colors ${
                         currentPage === link.page || link.dropdown.some(item => item.to.slice(1) === currentPage) 
                           ? 'text-gold-DEFAULT dark:text-gold-light' 
                           : 'text-gray-800 dark:text-white'
@@ -173,7 +173,7 @@ const Header = ({ currentPage }) => {
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="absolute hidden group-hover:block bg-white dark:bg-primary border border-gray-200 dark:border-gray-700 rounded shadow-lg mt-2 py-1 w-56"
+                      className="absolute left-0 top-full z-50 hidden group-hover:block bg-white dark:bg-primary border border-gray-200 dark:border-gray-700 rounded shadow-lg pt-3 pb-1 w-56"
                     >
                       {link.dropdown.map((item) => (
                         <Link
@@ -195,7 +195,7 @@ const Header = ({ currentPage }) => {
                   <motion.div key={link.to} variants={navLinkVariants} whileHover="hover">
                     <Link
                       to={link.to}
-                      className={`nav-link font-semibold text-lg transition-colors ${currentPage === link.page ? 'text-gold-DEFAULT dark:text-gold-light' : 'text-gray-800 dark:text-white'
+                      className={`nav-link font-semibold text-sm xl:text-lg transition-colors ${currentPage === link.page ? 'text-gold-DEFAULT dark:text-gold-light' : 'text-gray-800 dark:text-white'
                         }`}
                     >
                       {link.label}
@@ -205,19 +205,19 @@ const Header = ({ currentPage }) => {
               )}
             </div>
 
-            <div className="hidden lg:flex items-center gap-3 ml-4">
+            <div className="hidden lg:flex items-center gap-2 ml-2 xl:gap-3 xl:ml-4">
               {user ? (
                 <>
                   <Link
                     to={isAdmin ? '/admin' : '/account'}
-                    className="px-4 py-2 rounded-full bg-primary text-white text-sm font-bold hover:bg-blue-900 transition-colors"
+                    className="px-3 py-1.5 xl:px-4 xl:py-2 rounded-full bg-primary text-white text-xs xl:text-sm font-bold hover:bg-blue-900 transition-colors whitespace-nowrap"
                   >
                     {isAdmin ? 'Admin' : 'Account'}
                   </Link>
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="px-4 py-2 rounded-full border border-primary text-primary dark:border-white dark:text-white text-sm font-bold hover:bg-primary hover:text-white transition-colors"
+                    className="px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border border-primary text-primary dark:border-white dark:text-white text-xs xl:text-sm font-bold hover:bg-primary hover:text-white transition-colors whitespace-nowrap"
                   >
                     Logout
                   </button>
@@ -225,7 +225,7 @@ const Header = ({ currentPage }) => {
               ) : (
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-full bg-gold-DEFAULT text-primary text-sm font-bold hover:bg-yellow-400 transition-colors"
+                  className="px-3 py-1.5 xl:px-4 xl:py-2 rounded-full bg-gold-DEFAULT text-primary text-xs xl:text-sm font-bold hover:bg-yellow-400 transition-colors whitespace-nowrap"
                 >
                   Login
                 </Link>
@@ -245,16 +245,16 @@ const Header = ({ currentPage }) => {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            className="lg:hidden fixed top-0 left-0 w-full h-full bg-white dark:bg-primary z-50" // Added z-50 just in case
+            className="lg:hidden fixed top-0 left-0 w-full h-full bg-white dark:bg-primary z-50 flex flex-col"
             variants={menuVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
-            <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 h-20">
+            <div className="flex-shrink-0 flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 min-h-[5rem]">
               <Link to="/" className="flex items-center space-x-3" onClick={() => setIsMenuOpen(false)}>
-                <img alt="DC-IAPM Logo" className="h-12 w-12" src={Logo} />
-                <div className="font-display font-bold text-xs text-primary dark:text-white w-48 leading-tight">
+                <img alt="DC-IAPM Logo" className="h-12 w-12 flex-shrink-0" src={Logo} />
+                <div className="font-display font-bold text-[11px] text-primary dark:text-white w-52 leading-tight">
                   Delhi Chapter of Indian Association of Pathologists and Microbiologists (DC-IAPM)
                 </div>
               </Link>
@@ -264,7 +264,7 @@ const Header = ({ currentPage }) => {
                 </motion.div>
               </button>
             </div>
-            <div className="px-4 py-2 space-y-1">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-2 space-y-1">
               {mobileNavLinks.map((link, i) => ( // 4. This uses the updated mobileNavLinks
                 <motion.div
                   key={link.to}

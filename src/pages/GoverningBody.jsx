@@ -4,6 +4,7 @@ import { UserCircle2 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { listGoverningBodyMembers } from '../lib/content';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { logDevError } from '../lib/logger';
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -60,7 +61,7 @@ const GoverningBody = () => {
     listGoverningBodyMembers()
       .then((rows) => setMembers(rows))
       .catch((error) => {
-        console.error('Unable to load governing body members:', error);
+        logDevError('Unable to load governing body members:', error);
         setError('Unable to load governing body members.');
       })
       .finally(() => {

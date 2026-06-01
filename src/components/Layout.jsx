@@ -3,7 +3,7 @@ import Footer from './common/Footer'
 
 const Layout = ({ children, currentPage }) => {
   return (
-    <div className="bg-background-light dark:bg-background-dark font-body text-text-light dark:text-text-dark">
+    <div className="bg-background-light dark:bg-background-dark font-body text-text-light dark:text-text-dark" style={{ overflowX: 'clip' }}>
       <Header currentPage={currentPage} />
       {children}
       <Footer />

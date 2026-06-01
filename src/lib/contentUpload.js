@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from './supabase';
+import { logDevWarn } from './logger';
 
 const IMAGEKIT_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT;
 const CONTENT_BUCKET = 'content-assets';
@@ -10,7 +11,7 @@ export async function uploadContentFile(file, { folder = 'content', fallback = t
     try {
       return await uploadToImageKit(file, folder);
     } catch (error) {
-      console.warn('ImageKit upload failed, trying Supabase fallback:', error);
+      logDevWarn('ImageKit upload failed, trying Supabase fallback:', error);
       if (!fallback) throw error;
     }
   }

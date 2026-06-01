@@ -27,40 +27,30 @@ const itemVariants = {
 
 const HeroSection = () => {
   return (
-    <section 
-      className="relative text-white bg-cover bg-center"
+    <section
+      className="relative text-white bg-cover bg-center overflow-hidden"
       style={{
-        backgroundImage: `url(${Logo})` //
+        backgroundImage: `url(${Logo})`
       }}
     >
-      {/* 2. Enhanced Overlay: 
-          - Changed from a flat opacity to a gradient for more depth.
-          - Added 'backdrop-blur-sm' to slightly blur the busy logo background.
-      */}
       <div className="absolute inset-0 bg-primary opacity-60"></div>
-      
-      {/* 3. Animation Container:
-          - This 'motion.div' controls the 'staggerChildren' animation.
-      */}
-      <motion.div 
-        className="container mx-auto px-4 lg:px-6 py-20 md:py-24 lg:py-32 relative z-10 text-center"
+
+      <motion.div
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 md:py-20 lg:py-24 relative z-10 text-center"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <motion.h1 
-          className="font-display text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-shadow" //
-          variants={itemVariants} // Animate as a child item
+        <motion.h1
+          className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4 max-w-4xl mx-auto text-shadow"
+          variants={itemVariants}
         >
-          {/* 4. Color Enhancement:
-              - Used the site's accent color (gold) for key words.
-          */}
           Welcome to the <span className="text-gold-light">Delhi Chapter of Indian Association of Pathologists and Microbiologists</span> (DC-IAPM)
         </motion.h1>
-        
-        <motion.p 
-          className="text-lg hidden md:block font font-semibold md:text-xl max-w-3xl mx-auto text-shadow-sm mb-8" //
-          variants={itemVariants} // Animate as a child item
+
+        <motion.p
+          className="hidden md:block text-lg md:text-xl font-semibold max-w-2xl mx-auto text-shadow-sm mb-6 md:mb-8"
+          variants={itemVariants}
         >
           Fostering excellence in the field of Pathology through education, research, and collaboration.
         </motion.p>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import PaymentQR from '../images/qr.png';
+import { logDevError } from '../lib/logger';
 
 const EventRegistration = () => {
   const location = useLocation();
@@ -85,7 +86,7 @@ const EventRegistration = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching events:", error);
+        logDevError("Error fetching events:", error);
       } finally {
         setLoadingEvents(false);
       }
@@ -169,7 +170,7 @@ const EventRegistration = () => {
       });
       setStatus('success');
     } catch (error) {
-      console.error("Error:", error);
+      logDevError("Event registration submit failed:", error);
       setStatus('error');
     }
   };

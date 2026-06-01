@@ -11,6 +11,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Horizontal overflow protection is on the Layout wrapper (not html/body)
+   so position: sticky on the header keeps working. */
+
 .hero-bg {
   background-size: cover;
   background-position: center;

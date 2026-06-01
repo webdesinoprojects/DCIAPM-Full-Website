@@ -20,6 +20,7 @@ const CompleteProfile = () => {
   const [form, setForm] = useState({
     fullName: '',
     registrationNo: '',
+    phone: '',
     photoFile: null,
   });
   const [status, setStatus] = useState({ type: null, message: '' });
@@ -32,6 +33,7 @@ const CompleteProfile = () => {
       ...current,
       fullName: current.fullName || profile.full_name || '',
       registrationNo: current.registrationNo || profile.registration_no || '',
+      phone: current.phone || profile.phone || '',
     }));
   }, [profile]);
 
@@ -57,12 +59,17 @@ const CompleteProfile = () => {
     };
   }, [photoPreview]);
 
-  const identityMissing = !profile?.full_name || !profile?.registration_no;
+  const identityMissing = !profile?.full_name || !profile?.registration_no || !profile?.phone;
   const hasExistingPhoto = Boolean(profile?.photo_path);
 
   const updateTextField = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const updatePhone = (event) => {
+    const cleaned = event.target.value.replace(/[^0-9+\s\-()]/g, '');
+    setForm((current) => ({ ...current, phone: cleaned }));
   };
 
   const updatePhoto = (event) => {
@@ -95,9 +102,15 @@ const CompleteProfile = () => {
 
     const fullName = form.fullName || profile?.full_name || '';
     const registrationNo = form.registrationNo || profile?.registration_no || '';
+    const phone = form.phone || profile?.phone || '';
 
-    if (!fullName.trim() || !registrationNo.trim()) {
-      setStatus({ type: 'error', message: 'Your name and registration number are required before voting.' });
+    if (!fullName.trim() || !registrationNo.trim() || !phone.trim()) {
+      setStatus({ type: 'error', message: 'Your name, registration number and mobile number are required before voting.' });
+      return;
+    }
+
+    if (phone.replace(/\D/g, '').length < 10) {
+      setStatus({ type: 'error', message: 'Please enter a valid mobile number (at least 10 digits).' });
       return;
     }
 
@@ -112,6 +125,7 @@ const CompleteProfile = () => {
       const result = await completeVoterProfile({
         fullName,
         registrationNo,
+        phone,
         photoFile: form.photoFile,
       });
 
@@ -179,6 +193,7 @@ const CompleteProfile = () => {
             <div className="mt-5 grid gap-3">
               <InfoTile label="Name" value={profile?.full_name || form.fullName || 'Not saved yet'} />
               <InfoTile label="Registration No." value={profile?.registration_no || form.registrationNo || 'Not saved yet'} />
+              <InfoTile label="Mobile Number" value={profile?.phone || form.phone || 'Not saved yet'} />
               <InfoTile label="Photo Status" value={hasExistingPhoto ? 'Saved' : 'Required'} />
             </div>
           </aside>
@@ -214,6 +229,28 @@ const CompleteProfile = () => {
                     className="form-input uppercase"
                     placeholder="DCIAPM001"
                   />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="form-label">Mobile Number</span>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={form.phone}
+                    onChange={updatePhone}
+                    onKeyDown={(event) => {
+                      if (['e', 'E', '.'].includes(event.key)) event.preventDefault();
+                    }}
+                    required
+                    minLength="10"
+                    maxLength="20"
+                    inputMode="tel"
+                    pattern="[0-9+\s\-()]{10,20}"
+                    autoComplete="tel"
+                    className="form-input"
+                    placeholder="e.g. 9876543210 or +91 98765 43210"
+                  />
+                  <p className="mt-1 text-xs font-semibold text-gray-500">Used by the society to reach you about elections, events, and membership updates.</p>
                 </label>
               </div>
             )}

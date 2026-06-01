@@ -6,15 +6,11 @@ import { Field, FileField, StatusBlock } from '../../components/admin/ContentAdm
 import {
   approveMembershipApplication,
   createSignedMembershipUrl,
-  emailStatusClass,
-  emailStatusLabels,
   ensureMembershipDocuments,
-  friendlyMembershipEmailError,
   formatMembershipDate,
   generateMembershipDocuments,
   getMembershipApplication,
   membershipStatusLabels,
-  sendMembershipDocuments,
   statusClass,
   updateMembershipApplication,
   uploadMembershipAdminDocument,
@@ -73,6 +69,12 @@ const AdminMembershipApplicationDetail = () => {
       setLoading(false);
     });
   }, [loadApplication]);
+
+  useEffect(() => {
+    if (!status.message) return undefined;
+    const timer = window.setTimeout(() => setStatus({ type: null, message: '' }), 5000);
+    return () => window.clearTimeout(timer);
+  }, [status.message]);
 
   const updateField = (event) => {
     const { name, value, files } = event.target;
@@ -139,20 +141,19 @@ const AdminMembershipApplicationDetail = () => {
     }
   };
 
-  const sendDocuments = async () => {
+  const openEmailDraft = async (provider = 'default') => {
     setSending(true);
     setStatus({ type: null, message: '' });
     try {
       let current = application;
       if (!current.receipt_path || !current.certificate_path) {
         current = await ensureMembershipDocuments(current);
+        setApplication(current);
       }
-      const result = await sendMembershipDocuments(current.id);
-      if (!result.ok) throw new Error(result.message || 'Email was not sent.');
-      setStatus({ type: 'success', message: 'Documents sent to applicant.' });
-      await loadApplication();
+      openMembershipEmailClient({ application: current, provider });
+      setStatus({ type: 'success', message: 'Email draft opened with the membership portal download link.' });
     } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'Unable to send documents.' });
+      setStatus({ type: 'error', message: error.message || 'Unable to open email draft.' });
       await loadApplication().catch(() => {});
     } finally {
       setSending(false);
@@ -190,9 +191,6 @@ const AdminMembershipApplicationDetail = () => {
             <div className="flex flex-wrap items-center gap-3">
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(application.status)}`}>
                 {membershipStatusLabels[application.status] || application.status}
-              </span>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${emailStatusClass(application.last_email_status)}`}>
-                Email {emailStatusLabels[application.last_email_status] || application.last_email_status}
               </span>
               {application.membership_number && <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">{application.membership_number}</span>}
             </div>
@@ -250,12 +248,6 @@ const AdminMembershipApplicationDetail = () => {
             <FileField label="Upload certificate" name="certificateFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={updateField} current={application.certificate_path} />
             <DocumentQuickLink label="Certificate" url={assets.certificateUrl} emptyText="No certificate generated or uploaded yet." />
 
-            {application.last_email_error && (
-              <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-xs font-semibold text-red-700">
-                Last email error: {friendlyMembershipEmailError(application.last_email_error)}
-              </div>
-            )}
-
             <div className="grid gap-2">
               <p className="text-xs font-semibold leading-5 text-gray-500">
                 Save stores notes, status changes, and manual uploads. Use Approve / assign number for first approval and auto-number generation.
@@ -269,9 +261,14 @@ const AdminMembershipApplicationDetail = () => {
               <button type="button" onClick={generateDocuments} disabled={generating || application.status !== 'approved'} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-gray-50 disabled:opacity-50">
                 {generating ? 'Generating...' : application.receipt_path && application.certificate_path ? 'Regenerate receipt & certificate' : 'Generate receipt & certificate'}
               </button>
-              <button type="button" onClick={sendDocuments} disabled={sending || application.status !== 'approved'} className="rounded-lg bg-gold-DEFAULT px-4 py-2 text-sm font-bold text-primary hover:bg-yellow-500 disabled:opacity-50">
-                {sending ? 'Sending...' : application.last_email_status === 'failed' ? 'Retry email' : 'Send receipt & certificate'}
-              </button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => openEmailDraft('outlook')} disabled={sending || application.status !== 'approved'} className="rounded-lg bg-gold-DEFAULT px-4 py-2 text-sm font-bold text-primary hover:bg-yellow-500 disabled:opacity-50">
+                  {sending ? 'Opening...' : 'Open Outlook draft'}
+                </button>
+                <button type="button" onClick={() => openEmailDraft('gmail')} disabled={sending || application.status !== 'approved'} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-gray-50 disabled:opacity-50">
+                  Gmail draft
+                </button>
+              </div>
             </div>
           </div>
         </form>
@@ -330,6 +327,65 @@ const DocumentQuickLink = ({ label, url, emptyText }) => (
     </div>
   </div>
 );
+
+const openMembershipEmailClient = ({ application, provider }) => {
+  const subject = `DC-IAPM membership approved - ${application.membership_number}`;
+  const portalUrl = new URL('/join-membership?tab=status', window.location.origin).toString();
+  const approvedDate = application.approved_at
+    ? new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(application.approved_at))
+    : new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date());
+  const body = [
+    'Delhi Chapter of Indian Association of Pathologists and Microbiologists',
+    'DC-IAPM Membership Approval',
+    '----------------------------------------------------------------',
+    '',
+    `Dear ${application.applicant_name || 'Member'},`,
+    '',
+    'Your membership application has been reviewed and approved by DC-IAPM.',
+    '',
+    'Membership Details',
+    `Name: ${application.applicant_name || '-'}`,
+    `Membership Type: ${application.membership_type_label || '-'}`,
+    `Membership Number: ${application.membership_number || '-'}`,
+    `Bill Number: ${application.bill_number || application.membership_number || '-'}`,
+    `Approved On: ${approvedDate}`,
+    '',
+    'Download Receipt and Certificate',
+    `Open this link: ${portalUrl}`,
+    `Use your registered email address: ${application.email || '-'}`,
+    'Then select Check Status / Download to access your documents.',
+    '',
+    'Please keep the downloaded receipt and certificate for your records. If any details need correction, reply to this email with the required update.',
+    '',
+    'Regards,',
+    'DC-IAPM Admin Team',
+  ].join('\n');
+  const params = new URLSearchParams({ subject, body });
+
+  if (provider === 'outlook') {
+    const outlookParams = new URLSearchParams({
+      to: application.email || '',
+      subject,
+      body,
+    });
+    window.open(`https://outlook.office.com/mail/deeplink/compose?${outlookParams.toString()}`, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  if (provider === 'gmail') {
+    const gmailParams = new URLSearchParams({
+      view: 'cm',
+      fs: '1',
+      to: application.email || '',
+      su: subject,
+      body,
+    });
+    window.open(`https://mail.google.com/mail/?${gmailParams.toString()}`, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  window.location.href = `mailto:${encodeURIComponent(application.email || '')}?${params.toString()}`;
+};
 
 const PanelState = ({ text }) => (
   <div className="rounded-lg border border-gray-200 bg-white p-10 text-center shadow-sm">

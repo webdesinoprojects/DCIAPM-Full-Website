@@ -152,11 +152,8 @@ export async function submitMembershipApplication(input) {
 
   if (error) return { ok: false, message: friendlyMembershipError(error.message) };
 
-  supabase.functions.invoke('membership-ack-email', {
-    body: { applicationId: data.id },
-  }).catch((error) => {
-    console.warn('Membership acknowledgement email failed:', error);
-  });
+  // Automatic Resend acknowledgement emails are disabled until DC-IAPM has a verified sender domain.
+  // The application is still stored and visible in the admin membership queue.
 
   return { ok: true, application: data };
 }
@@ -319,12 +316,10 @@ export async function deleteMembershipApplication(id) {
 }
 
 export async function sendMembershipDocuments(id) {
-  const { data, error } = await supabase.functions.invoke('membership-send-documents', {
-    body: { applicationId: id },
-  });
-  if (error) throw new Error(friendlyMembershipEmailError(error.message));
-  if (data?.ok === false) throw new Error(friendlyMembershipEmailError(data.message));
-  return data;
+  // Direct Resend delivery is intentionally disabled until a verified sender domain is configured.
+  // Keep the Edge Function in the repo for later, but the admin UI now opens a prefilled email draft.
+  void id;
+  throw new Error('Automatic email sending is disabled. Use Open email draft from the admin review page.');
 }
 
 export async function createSignedMembershipUrl(path, expiresIn = 300) {

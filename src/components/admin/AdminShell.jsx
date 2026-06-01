@@ -23,7 +23,9 @@ const navGroups = [
     items: [
       { label: 'Membership Apps', to: '/admin/membership', icon: 'card_membership' },
       { label: 'Members', to: '/admin/members', icon: 'groups' },
+      { label: 'Voter Details', to: '/admin/voters', icon: 'how_to_reg' },
       { label: 'Events', to: '/admin/events', icon: 'event' },
+      { label: 'Latest Updates', to: '/admin/ticker-updates', icon: 'campaign' },
       { label: 'Cases', to: '/admin/cases', icon: 'biotech' },
       { label: 'Publications', to: '/admin/publications', icon: 'article' },
       { label: 'Governing Body', to: '/admin/governing-body', icon: 'badge' },

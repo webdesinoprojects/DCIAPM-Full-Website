@@ -25,8 +25,8 @@ const initialForgotForm = {
 };
 
 const initialAdminForm = {
-  email: 'admin@gmail.com',
-  password: 'admin123',
+  email: '',
+  password: '',
 };
 
 const Auth = () => {

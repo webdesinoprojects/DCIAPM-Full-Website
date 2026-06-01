@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AuthContext } from './auth-context';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { normalizeRegistrationNo, uploadVoterPhoto } from '../lib/elections';
+import { logDevError } from '../lib/logger';
 
 const emptyAuthState = {
   session: null,
@@ -18,12 +19,12 @@ export const AuthProvider = ({ children }) => {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id,email,full_name,registration_no,photo_url,photo_path,role,is_active,created_at,last_seen_at')
+      .select('id,email,full_name,phone,registration_no,photo_url,photo_path,role,is_active,created_at,last_seen_at')
       .eq('id', user.id)
       .maybeSingle();
 
     if (error) {
-      console.error('Unable to load profile:', error);
+      logDevError('Unable to load profile:', error);
       return null;
     }
 
@@ -175,7 +176,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (error) {
-      console.error('Magic link request failed:', error);
+      logDevError('Magic link request failed:', error);
       return {
         ok: false,
         message: friendlyAuthError(error.message),
@@ -224,7 +225,7 @@ export const AuthProvider = ({ children }) => {
     return { ok: true, profile };
   }, [loadProfile]);
 
-  const completeVoterProfile = useCallback(async ({ fullName, registrationNo, photoFile }) => {
+  const completeVoterProfile = useCallback(async ({ fullName, registrationNo, photoFile, phone }) => {
     if (!isSupabaseConfigured) {
       return { ok: false, message: 'Supabase is not configured yet.' };
     }
@@ -241,6 +242,7 @@ export const AuthProvider = ({ children }) => {
     const editablePayload = {
       full_name: fullName.trim(),
       registration_no: normalizeRegistrationNo(registrationNo),
+      phone: phone ? String(phone).trim() : null,
       photo_path: uploaded.path || currentProfile?.photo_path || null,
       photo_url: null,
       last_seen_at: new Date().toISOString(),

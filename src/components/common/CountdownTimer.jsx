@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logDevWarn } from '../../lib/logger';
 
 const CountdownTimer = ({ targetDate, title, variant = 'default' }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -16,7 +17,7 @@ const CountdownTimer = ({ targetDate, title, variant = 'default' }) => {
     
     // 3. Safety check: Invalid Date?
     if (isNaN(target.getTime())) {
-      console.warn("Invalid Timer Date:", targetDate);
+      logDevWarn("Invalid Timer Date:", targetDate);
       setIsValidDate(false);
       return;
     }

@@ -6,8 +6,6 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import { StatusBlock } from '../../components/admin/ContentAdminPrimitives';
 import {
   deleteMembershipApplication,
-  emailStatusClass,
-  emailStatusLabels,
   formatMembershipDate,
   listMembershipApplications,
   membershipStatusLabels,
@@ -86,7 +84,7 @@ const AdminMembershipApplications = () => {
   };
 
   return (
-    <AdminShell title="Membership Applications" description="Review applications, verify payment and send membership documents.">
+    <AdminShell title="Membership Applications" description="Review applications, verify payment and prepare membership documents.">
       <SEO title="Admin Membership Applications" description="Manage membership applications." keywords="admin membership" />
       <StatusBlock status={status} />
 
@@ -132,14 +130,13 @@ const AdminMembershipApplications = () => {
                   <th className="px-4 py-3">Applicant</th>
                   <th className="px-4 py-3">Membership</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Submitted</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
                 {loading ? (
-                  <tr><td colSpan="6" className="px-4 py-10 text-center font-semibold text-gray-500">Loading...</td></tr>
+                  <tr><td colSpan="5" className="px-4 py-10 text-center font-semibold text-gray-500">Loading...</td></tr>
                 ) : filtered.map((application) => (
                   <tr key={application.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
@@ -157,11 +154,6 @@ const AdminMembershipApplications = () => {
                         {membershipStatusLabels[application.status] || application.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${emailStatusClass(application.last_email_status)}`}>
-                        {emailStatusLabels[application.last_email_status] || application.last_email_status}
-                      </span>
-                    </td>
                     <td className="px-4 py-3 text-xs text-gray-500">{formatMembershipDate(application.created_at)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
@@ -176,7 +168,7 @@ const AdminMembershipApplications = () => {
                   </tr>
                 ))}
                 {!loading && filtered.length === 0 && (
-                  <tr><td colSpan="6" className="px-4 py-10 text-center font-semibold text-gray-500">No applications match the current filters.</td></tr>
+                  <tr><td colSpan="5" className="px-4 py-10 text-center font-semibold text-gray-500">No applications match the current filters.</td></tr>
                 )}
               </tbody>
             </table>

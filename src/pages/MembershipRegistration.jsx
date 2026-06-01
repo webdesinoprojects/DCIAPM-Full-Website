@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
 import PaymentQR from '../images/qr.png';
+import { logDevError } from '../lib/logger';
 import {
   getMembershipPlan,
   lookupMembershipStatus,
@@ -211,7 +212,7 @@ const MembershipRegistration = () => {
       });
       setErrors({});
     } catch (error) {
-      console.error("Error:", error);
+      logDevError("Membership application submit failed:", error);
       setRegStatus('error');
     }
   };
@@ -240,7 +241,7 @@ const MembershipRegistration = () => {
         setStatusResult('not_found');
       }
     } catch (error) {
-      console.error("Check Status Error:", error);
+      logDevError("Membership status check failed:", error);
       setStatusResult('error');
     }
   };
@@ -566,7 +567,11 @@ const MembershipRegistration = () => {
                 
                 <div className="my-6">
                    <span className={`px-4 py-2 rounded-full text-sm font-bold ${
-                     memberData.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                     memberData.status === 'approved'
+                       ? 'bg-green-100 text-green-800'
+                       : memberData.status === 'rejected'
+                         ? 'bg-red-100 text-red-800'
+                         : 'bg-yellow-100 text-yellow-800'
                    }`}>
                      Application Status: {membershipStatusLabels[memberData.status] || memberData.status}
                    </span>
@@ -592,6 +597,11 @@ const MembershipRegistration = () => {
                         </a>
                       )}
                     </div>
+                  </div>
+                ) : memberData.status === 'rejected' ? (
+                  <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-4 rounded text-sm text-left border border-red-100 dark:border-red-800">
+                    <p className="font-bold mb-1">Your application was not approved.</p>
+                    <p>The submitted application or payment details could not be verified. Please contact the DC-IAPM admin team if you need clarification or want to submit corrected details.</p>
                   </div>
                 ) : (
                   <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 p-4 rounded text-sm text-left">

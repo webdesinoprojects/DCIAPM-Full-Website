@@ -43,6 +43,9 @@ import AdminMembers from './pages/admin/AdminMembers';
 import AdminMemberDetail from './pages/admin/AdminMemberDetail';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminMessageDetail from './pages/admin/AdminMessageDetail';
+import AdminTickerUpdates from './pages/admin/AdminTickerUpdates';
+import AdminVoters from './pages/admin/AdminVoters';
+import AdminVoterDetail from './pages/admin/AdminVoterDetail';
 import EventDetail from './pages/EventDetail';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -250,6 +253,30 @@ function App() {
             element={(
               <ProtectedRoute requireAdmin>
                 <AdminGoverningBody />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/ticker-updates"
+            element={(
+              <ProtectedRoute requireAdmin>
+                <AdminTickerUpdates />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/voters"
+            element={(
+              <ProtectedRoute requireAdmin>
+                <AdminVoters />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/voters/:voterId"
+            element={(
+              <ProtectedRoute requireAdmin>
+                <AdminVoterDetail />
               </ProtectedRoute>
             )}
           />
