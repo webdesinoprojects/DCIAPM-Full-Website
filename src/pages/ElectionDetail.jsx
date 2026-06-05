@@ -136,6 +136,7 @@ const ElectionDetail = () => {
                 <tr>
                   <th className="px-4 py-3">Nominee</th>
                   <th className="px-4 py-3">Position</th>
+                  <th className="px-4 py-3">Profile</th>
                   <th className="px-4 py-3">Registration</th>
                   <th className="px-4 py-3">Message</th>
                   <th className="px-4 py-3">Action</th>
@@ -151,6 +152,14 @@ const ElectionDetail = () => {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{candidate.position}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      <div className="grid gap-1">
+                        {candidate.current_designation && <span>{candidate.current_designation}</span>}
+                        {candidate.institution && <span className="text-xs text-gray-500">{candidate.institution}</span>}
+                        {candidate.cv_path && <span className="w-fit rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">CV uploaded</span>}
+                        {!candidate.current_designation && !candidate.institution && !candidate.cv_path && <span className="text-gray-400">-</span>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{candidate.registration_no}</td>
                     <td className="max-w-md px-4 py-3 text-gray-600">{candidate.message || 'No message added'}</td>
                     <td className="px-4 py-3">
@@ -180,11 +189,18 @@ const NomineeCard = ({ election, candidate, selected, voteState }) => (
         <h3 className="text-xl font-bold text-primary group-hover:underline">{candidate.full_name}</h3>
         <p className="mt-1 text-sm font-bold text-gold-DEFAULT">{candidate.position}</p>
         <p className="mt-1 text-xs font-semibold text-gray-500">Reg. {candidate.registration_no}</p>
+        {candidate.current_designation && <p className="mt-2 text-sm font-semibold text-gray-700">{candidate.current_designation}</p>}
+        {candidate.institution && <p className="mt-1 text-xs font-semibold text-gray-500">{candidate.institution}</p>}
       </div>
     </div>
     {candidate.message && (
       <p className="mt-5 text-sm leading-6 text-gray-600">{candidate.message}</p>
     )}
+    <div className="mt-4 flex flex-wrap gap-2">
+      {candidate.profile_summary && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Short CV added</span>}
+      {candidate.agenda && <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Agenda added</span>}
+      {candidate.cv_path && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">CV document</span>}
+    </div>
     <span className={`mt-5 inline-flex rounded-lg px-4 py-2 text-sm font-bold ${
       selected
         ? 'bg-green-50 text-green-700'

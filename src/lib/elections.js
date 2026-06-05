@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from './supabase';
+import { uploadContentFile } from './contentUpload';
 
 export const electionStatuses = ['draft', 'scheduled', 'active', 'closed', 'archived'];
 
@@ -102,6 +103,16 @@ export async function listElections({ admin = false } = {}) {
         registration_no,
         position,
         message,
+        current_designation,
+        institution,
+        qualification,
+        profile_summary,
+        key_achievements,
+        agenda,
+        cv_path,
+        cv_file_name,
+        cv_mime_type,
+        cv_size,
         photo_url,
         photo_path,
         sort_order,
@@ -118,6 +129,35 @@ export async function listElections({ admin = false } = {}) {
   if (error) throw error;
 
   return (data || []).map(normalizeElectionRecord);
+}
+
+export async function listPublicElectionSummaries({ limit = 20 } = {}) {
+  if (!isSupabaseConfigured) return [];
+
+  let query = supabase
+    .from('elections')
+    .select('id,slug,title,description,status,starts_at,ends_at,created_at,updated_at')
+    .neq('status', 'draft')
+    .neq('status', 'archived')
+    .order('starts_at', { ascending: true, nullsFirst: false });
+
+  if (limit) query = query.limit(limit);
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return (data || []).sort((a, b) => {
+    const rank = { active: 0, scheduled: 1, closed: 2, archived: 3, draft: 4 };
+    const aStatus = electionRuntimeStatus(a);
+    const bStatus = electionRuntimeStatus(b);
+    if (rank[aStatus] !== rank[bStatus]) return rank[aStatus] - rank[bStatus];
+    return new Date(a.starts_at || a.created_at).getTime() - new Date(b.starts_at || b.created_at).getTime();
+  });
+}
+
+export async function listHomepageElections() {
+  return listPublicElectionSummaries({ limit: 3 });
 }
 
 export async function getElectionWithCandidates(slug) {
@@ -142,6 +182,16 @@ export async function getElectionWithCandidates(slug) {
         registration_no,
         position,
         message,
+        current_designation,
+        institution,
+        qualification,
+        profile_summary,
+        key_achievements,
+        agenda,
+        cv_path,
+        cv_file_name,
+        cv_mime_type,
+        cv_size,
         photo_url,
         photo_path,
         sort_order,
@@ -256,6 +306,16 @@ export async function createCandidate(input, userId) {
     registration_no: normalizeRegistrationNo(input.registration_no),
     position: input.position.trim(),
     message: input.message?.trim() || null,
+    current_designation: input.current_designation?.trim() || null,
+    institution: input.institution?.trim() || null,
+    qualification: input.qualification?.trim() || null,
+    profile_summary: input.profile_summary?.trim() || null,
+    key_achievements: input.key_achievements?.trim() || null,
+    agenda: input.agenda?.trim() || null,
+    cv_path: input.cv_path || null,
+    cv_file_name: input.cv_file_name || null,
+    cv_mime_type: input.cv_mime_type || null,
+    cv_size: input.cv_size || null,
     photo_url: input.photo_url || null,
     photo_path: input.photo_path || null,
     sort_order: Number(input.sort_order || 0),
@@ -331,12 +391,22 @@ export async function updateCandidate(id, input) {
     registration_no: normalizeRegistrationNo(input.registration_no),
     position: input.position.trim(),
     message: input.message?.trim() || null,
+    current_designation: input.current_designation?.trim() || null,
+    institution: input.institution?.trim() || null,
+    qualification: input.qualification?.trim() || null,
+    profile_summary: input.profile_summary?.trim() || null,
+    key_achievements: input.key_achievements?.trim() || null,
+    agenda: input.agenda?.trim() || null,
     sort_order: Number(input.sort_order || 0),
     is_active: Boolean(input.is_active),
   };
 
   if (input.photo_url !== undefined) payload.photo_url = input.photo_url || null;
   if (input.photo_path !== undefined) payload.photo_path = input.photo_path || null;
+  if (input.cv_path !== undefined) payload.cv_path = input.cv_path || null;
+  if (input.cv_file_name !== undefined) payload.cv_file_name = input.cv_file_name || null;
+  if (input.cv_mime_type !== undefined) payload.cv_mime_type = input.cv_mime_type || null;
+  if (input.cv_size !== undefined) payload.cv_size = input.cv_size || null;
 
   const { data, error } = await supabase
     .from('election_candidates')
@@ -352,18 +422,67 @@ export async function updateCandidate(id, input) {
 export async function uploadCandidatePhoto(file) {
   if (!file) return { path: null, url: null };
 
-  const path = `candidates/${Date.now()}-${safeFileName(file.name)}`;
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Photo upload failed. Use JPG, PNG or WebP only.');
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Photo upload failed. File must be under 5 MB.');
+  }
+
+  const uploaded = await uploadContentFile(file, {
+    folder: 'elections/candidates',
+    fallback: true,
+  });
+
+  return { path: uploaded.path, url: uploaded.url };
+}
+
+export async function uploadCandidateCv(file, electionId) {
+  if (!file) return emptyCandidateCv();
+
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('CV upload failed. Use PDF, DOC, or DOCX only.');
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('CV upload failed. File must be under 10 MB.');
+  }
+
+  const folder = electionId ? `candidate-cvs/${electionId}` : 'candidate-cvs';
+  const path = `${folder}/${Date.now()}-${safeFileName(file.name)}`;
   const { error } = await supabase.storage
-    .from('election-assets')
+    .from('election-documents')
     .upload(path, file, {
       contentType: file.type,
       upsert: false,
     });
 
   if (error) throw error;
+  return {
+    cv_path: path,
+    cv_file_name: file.name,
+    cv_mime_type: file.type || null,
+    cv_size: file.size || null,
+  };
+}
 
-  const { data } = supabase.storage.from('election-assets').getPublicUrl(path);
-  return { path, url: data.publicUrl };
+export async function getCandidateCvSignedUrl(path, expiresIn = 60 * 60) {
+  if (!path) return '';
+
+  const { data, error } = await supabase.storage
+    .from('election-documents')
+    .createSignedUrl(path, expiresIn);
+
+  if (error) throw error;
+  return data?.signedUrl || '';
 }
 
 export async function uploadVoterPhoto(userId, file) {
@@ -557,4 +676,13 @@ function safeFileName(name) {
     .replace(/^-+|-+$/g, '');
 
   return clean || fallback;
+}
+
+function emptyCandidateCv() {
+  return {
+    cv_path: null,
+    cv_file_name: null,
+    cv_mime_type: null,
+    cv_size: null,
+  };
 }

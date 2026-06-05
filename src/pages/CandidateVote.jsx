@@ -10,16 +10,19 @@ import {
   castElectionVote,
   formatDateTime,
   getCandidateForVote,
+  getCandidateCvSignedUrl,
   getMyVotes,
   subscribeToElectionChanges,
   voteMessages,
 } from '../lib/elections';
+import { logDevError } from '../lib/logger';
 
 const CandidateVote = () => {
   const { electionSlug, candidateSlug } = useParams();
   const { user, profile } = useAuth();
   const [election, setElection] = useState(null);
   const [candidate, setCandidate] = useState(null);
+  const [candidateCvUrl, setCandidateCvUrl] = useState('');
   const [vote, setVote] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -37,8 +40,18 @@ const CandidateVote = () => {
     }
 
     const voteMap = await getMyVotes([loadedElection.id]);
+    let cvUrl = '';
+    if (loadedCandidate.cv_path) {
+      try {
+        cvUrl = await getCandidateCvSignedUrl(loadedCandidate.cv_path);
+      } catch (cvError) {
+        logDevError('Unable to create nominee CV link:', cvError);
+      }
+    }
+
     setElection(loadedElection);
     setCandidate(loadedCandidate);
+    setCandidateCvUrl(cvUrl);
     setVote(voteMap[loadedElection.id] || null);
     setLoading(false);
   }, [candidateSlug, electionSlug]);
@@ -150,6 +163,9 @@ const CandidateVote = () => {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <InfoTile label="Registration No." value={candidate.registration_no} />
                 <InfoTile label="Election" value={election.title} />
+                {candidate.current_designation && <InfoTile label="Designation" value={candidate.current_designation} />}
+                {candidate.institution && <InfoTile label="Institution" value={candidate.institution} />}
+                {candidate.qualification && <InfoTile label="Qualification" value={candidate.qualification} />}
               </div>
             </div>
           </div>
@@ -160,6 +176,34 @@ const CandidateVote = () => {
               {candidate.message || 'The admin has not added a nominee message yet.'}
             </p>
           </div>
+
+          <ProfileSection title="Short CV / Profile Summary" value={candidate.profile_summary} />
+          <ProfileSection title="Key Achievements" value={candidate.key_achievements} />
+          <ProfileSection title="Vision / Agenda for Term" value={candidate.agenda} />
+
+          {candidate.cv_path && (
+            <div className="mt-5 rounded-lg border border-gray-100 bg-[#fbfcfe] p-5">
+              <h3 className="text-lg font-bold text-primary">Uploaded CV</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                {candidate.cv_file_name || 'Nominee CV document'}
+              </p>
+              {candidateCvUrl ? (
+                <a
+                  href={candidateCvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-blue-900"
+                >
+                  <span className="material-icons-outlined mr-2 text-base">description</span>
+                  Open CV
+                </a>
+              ) : (
+                <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                  CV link could not be prepared. Please refresh or contact admin.
+                </p>
+              )}
+            </div>
+          )}
         </article>
 
         <aside className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -239,6 +283,17 @@ const InfoTile = ({ label, value }) => (
     <p className="mt-2 font-bold text-gray-900">{value}</p>
   </div>
 );
+
+const ProfileSection = ({ title, value }) => {
+  if (!value) return null;
+
+  return (
+    <div className="mt-5 rounded-lg border border-gray-100 bg-[#fbfcfe] p-5">
+      <h3 className="text-lg font-bold text-primary">{title}</h3>
+      <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-gray-700">{value}</p>
+    </div>
+  );
+};
 
 const PageState = ({ icon = 'progress_activity', title = 'Loading', text }) => (
   <main className="grid min-h-[60vh] place-items-center bg-[#f7f9fc] px-4">

@@ -22,6 +22,7 @@ const navGroups = [
     label: 'Operations',
     items: [
       { label: 'Membership Apps', to: '/admin/membership', icon: 'card_membership' },
+      { label: 'Membership Form', to: '/admin/membership-settings', icon: 'edit_note' },
       { label: 'Members', to: '/admin/members', icon: 'groups' },
       { label: 'Voter Details', to: '/admin/voters', icon: 'how_to_reg' },
       { label: 'Events', to: '/admin/events', icon: 'event' },

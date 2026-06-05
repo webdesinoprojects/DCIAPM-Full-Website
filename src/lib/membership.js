@@ -1,4 +1,9 @@
-import { isSupabaseConfigured, supabase } from './supabase';
+import { isSupabaseConfigured, publicSupabase, supabase } from './supabase';
+import { logDevWarn } from './logger';
+import {
+  fallbackMembershipPlans,
+  getMembershipPortalPlan,
+} from './membershipConfig';
 import {
   createMembershipCertificateDocx,
   createMembershipReceiptDocx,
@@ -6,29 +11,7 @@ import {
 
 export const MEMBERSHIP_BUCKET = 'membership-assets';
 
-export const membershipPlans = [
-  {
-    value: 'life',
-    label: 'Life Membership',
-    amountLabel: '5,000 INR',
-    amount: 5000,
-    currency: 'INR',
-  },
-  {
-    value: 'ad_hoc',
-    label: 'Ad Hoc Membership (3 years)',
-    amountLabel: '1,500 INR',
-    amount: 1500,
-    currency: 'INR',
-  },
-  {
-    value: 'overseas',
-    label: 'Overseas Membership (3 years)',
-    amountLabel: '200 USD',
-    amount: 200,
-    currency: 'USD',
-  },
-];
+export const membershipPlans = fallbackMembershipPlans;
 
 export const membershipStatusLabels = {
   submitted: 'Submitted',
@@ -74,6 +57,15 @@ export function getMembershipPlan(value) {
   return membershipPlans.find((plan) => plan.value === value) || membershipPlans[0];
 }
 
+async function resolveMembershipPlan(value) {
+  try {
+    return await getMembershipPortalPlan(value);
+  } catch (error) {
+    logDevWarn('Membership plan lookup failed, using fallback:', error);
+    return getMembershipPlan(value);
+  }
+}
+
 export function normalizeMembershipType(labelOrValue) {
   const value = String(labelOrValue || '').toLowerCase();
   if (value.includes('overseas')) return 'overseas';
@@ -114,9 +106,9 @@ export async function submitMembershipApplication(input) {
   }
 
   const applicationId = crypto.randomUUID();
-  const plan = getMembershipPlan(input.membership_type);
-  const photo = await uploadMembershipAsset(photoFile, `applications/${applicationId}/photo`);
-  const proof = await uploadMembershipAsset(paymentProofFile, `applications/${applicationId}/payment-proof`);
+  const plan = await resolveMembershipPlan(input.membership_type);
+  const photo = await uploadMembershipAsset(photoFile, `applications/${applicationId}/photo`, publicSupabase);
+  const proof = await uploadMembershipAsset(paymentProofFile, `applications/${applicationId}/payment-proof`, publicSupabase);
 
   const payload = {
     id: applicationId,
@@ -144,18 +136,24 @@ export async function submitMembershipApplication(input) {
     status: 'submitted',
   };
 
-  const { data, error } = await supabase
+  const { error } = await publicSupabase
     .from('membership_applications')
-    .insert(payload)
-    .select('id,applicant_name,email,status,created_at')
-    .single();
+    .insert(payload);
 
-  if (error) return { ok: false, message: friendlyMembershipError(error.message) };
+  if (error) return { ok: false, message: friendlyMembershipError(error) };
 
   // Automatic Resend acknowledgement emails are disabled until DC-IAPM has a verified sender domain.
   // The application is still stored and visible in the admin membership queue.
 
-  return { ok: true, application: data };
+  return {
+    ok: true,
+    application: {
+      id: applicationId,
+      applicant_name: payload.applicant_name,
+      email: payload.email,
+      status: payload.status,
+    },
+  };
 }
 
 export async function lookupMembershipStatus(email) {
@@ -331,14 +329,14 @@ export async function createSignedMembershipUrl(path, expiresIn = 300) {
   return data.signedUrl;
 }
 
-async function uploadMembershipAsset(file, folder) {
+async function uploadMembershipAsset(file, folder, client = supabase) {
   const path = `${folder}/${Date.now()}-${safeFileName(file.name)}`;
-  const { error } = await supabase.storage
+  const { error } = await client.storage
     .from(MEMBERSHIP_BUCKET)
     .upload(path, file, {
       cacheControl: '3600',
       contentType: file.type || 'application/octet-stream',
-      upsert: true,
+      upsert: false,
     });
   if (error) throwMembershipError(error);
   return {

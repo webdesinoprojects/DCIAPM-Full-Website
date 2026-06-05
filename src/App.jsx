@@ -5,6 +5,7 @@ import GoverningBody from './pages/GoverningBody'
 import AboutUs from './pages/AboutUs'
 import SecretaryMessage from './pages/SecretaryMessage'
 import Membership from './pages/Membership'
+import DcIapmElection from './pages/DcIapmElection'
 import AcademicsEvents from './pages/AcademicsEvents'
 import Publications from './pages/Publications'
 import ContactUs from './pages/ContactUs'
@@ -39,6 +40,7 @@ import AdminPublications from './pages/admin/AdminPublications';
 import AdminGoverningBody from './pages/admin/AdminGoverningBody';
 import AdminMembershipApplications from './pages/admin/AdminMembershipApplications';
 import AdminMembershipApplicationDetail from './pages/admin/AdminMembershipApplicationDetail';
+import AdminMembershipSettings from './pages/admin/AdminMembershipSettings';
 import AdminMembers from './pages/admin/AdminMembers';
 import AdminMemberDetail from './pages/admin/AdminMemberDetail';
 import AdminMessages from './pages/admin/AdminMessages';
@@ -66,6 +68,7 @@ function App() {
           <Route path="/secretary-message" element={<SecretaryMessage />} />
           <Route path="/president-message" element={<PresidentMessage />} />
           <Route path="/membership" element={<Membership />} />
+          <Route path="/dc-iapm-election" element={<DcIapmElection />} />
           <Route path="/members-directory" element={<MembersDetails />} />
           <Route path="/academics-events" element={<AcademicsEvents />} />
           <Route path="/publications" element={<Publications />} />
@@ -205,6 +208,14 @@ function App() {
             element={(
               <ProtectedRoute requireAdmin>
                 <AdminMembershipApplicationDetail />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/membership-settings"
+            element={(
+              <ProtectedRoute requireAdmin>
+                <AdminMembershipSettings />
               </ProtectedRoute>
             )}
           />

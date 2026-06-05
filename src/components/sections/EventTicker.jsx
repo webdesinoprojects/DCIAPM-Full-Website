@@ -63,7 +63,7 @@ const EventTicker = () => {
                         className="flex items-center gap-16 whitespace-nowrap"
                         animate={{ x: ["0%", "-33.33%"] }}
                         transition={{
-                            duration: Math.max(duplicatedUpdates.length * 6, 20),
+                            duration: Math.max(duplicatedUpdates.length * 16, 58),
                             ease: "linear",
                             repeat: Infinity,
                         }}

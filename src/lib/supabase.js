@@ -111,3 +111,16 @@ export const supabase = createClient(
     },
   },
 );
+
+export const publicSupabase = createClient(
+  supabaseUrl || 'https://example.supabase.co',
+  supabaseAnonKey || 'missing-anon-key',
+  {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+      storageKey: `${AUTH_STORAGE_KEY}-public`,
+    },
+  },
+);

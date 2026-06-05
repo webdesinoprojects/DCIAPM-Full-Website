@@ -101,6 +101,7 @@ const Header = ({ currentPage }) => {
     },
     // { to: '/membership', label: 'Membership', page: 'membership', icon: 'card_membership' }, // This line is replaced
     // 1. === MODIFICATION END ===
+    { to: '/dc-iapm-election', label: 'Election', page: 'dc-iapm-election', icon: 'how_to_vote', title: 'DC-IAPM Election' },
     {
       label: 'Academics & Events',
       page: 'academics_events', // Base page key for highlighting
@@ -128,6 +129,7 @@ const Header = ({ currentPage }) => {
     { to: '/members-directory', label: 'Member Directory', page: 'members-directory', icon: 'list_alt' },
     // { to: '/membership', label: 'Membership', page: 'membership', icon: 'card_membership' }, // This line is replaced
     // 2. === MODIFICATION END ===
+    { to: '/dc-iapm-election', label: 'DC-IAPM Election', page: 'dc-iapm-election', icon: 'how_to_vote' },
     { to: '/academics-events', label: 'Upcoming Events', page: 'academics-events', icon: 'school' },
     { to: '/journal-search', label: 'Journal Search', page: 'journal-search', icon: 'find_in_page' },
     { to: '/case-of-the-month', label: 'Case of the Month', page: 'case-of-the-month', icon: 'quiz' },
@@ -153,7 +155,7 @@ const Header = ({ currentPage }) => {
               </div>
             </Link>
 
-            <div className="hidden lg:flex items-center space-x-3 xl:space-x-6">
+            <div className="hidden lg:flex items-center space-x-2 xl:space-x-4">
               {navLinks.map((link) =>
                 link.dropdown ? (
                   <div key={link.label} className="relative group pb-3 -mb-3">
@@ -161,7 +163,7 @@ const Header = ({ currentPage }) => {
                       variants={navLinkVariants}
                       whileHover="hover"
                       // This logic correctly highlights the parent tab if a child page is active
-                      className={`nav-link font-semibold text-sm xl:text-lg flex items-center transition-colors ${
+                      className={`nav-link font-semibold text-sm xl:text-base flex items-center transition-colors ${
                         currentPage === link.page || link.dropdown.some(item => item.to.slice(1) === currentPage) 
                           ? 'text-gold-DEFAULT dark:text-gold-light' 
                           : 'text-gray-800 dark:text-white'
@@ -195,7 +197,8 @@ const Header = ({ currentPage }) => {
                   <motion.div key={link.to} variants={navLinkVariants} whileHover="hover">
                     <Link
                       to={link.to}
-                      className={`nav-link font-semibold text-sm xl:text-lg transition-colors ${currentPage === link.page ? 'text-gold-DEFAULT dark:text-gold-light' : 'text-gray-800 dark:text-white'
+                      title={link.title}
+                      className={`nav-link font-semibold text-sm xl:text-base transition-colors ${currentPage === link.page ? 'text-gold-DEFAULT dark:text-gold-light' : 'text-gray-800 dark:text-white'
                         }`}
                     >
                       {link.label}

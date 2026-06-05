@@ -13,6 +13,7 @@ import {
   getElectionWithCandidates,
   normalizeRegistrationNo,
   updateCandidate,
+  uploadCandidateCv,
   uploadCandidatePhoto,
 } from '../../lib/elections';
 
@@ -21,11 +22,22 @@ const emptyForm = {
   registration_no: '',
   position: '',
   message: '',
+  current_designation: '',
+  institution: '',
+  qualification: '',
+  profile_summary: '',
+  key_achievements: '',
+  agenda: '',
   sort_order: 0,
   is_active: true,
   photoFile: null,
   photo_url: '',
   photo_path: '',
+  cvFile: null,
+  cv_path: '',
+  cv_file_name: '',
+  cv_mime_type: '',
+  cv_size: null,
 };
 
 const AdminCandidates = () => {
@@ -67,11 +79,22 @@ const AdminCandidates = () => {
       registration_no: candidate.registration_no || '',
       position: candidate.position || '',
       message: candidate.message || '',
+      current_designation: candidate.current_designation || '',
+      institution: candidate.institution || '',
+      qualification: candidate.qualification || '',
+      profile_summary: candidate.profile_summary || '',
+      key_achievements: candidate.key_achievements || '',
+      agenda: candidate.agenda || '',
       sort_order: candidate.sort_order || 0,
       is_active: candidate.is_active,
       photoFile: null,
       photo_url: candidate.photo_url || '',
       photo_path: candidate.photo_path || '',
+      cvFile: null,
+      cv_path: candidate.cv_path || '',
+      cv_file_name: candidate.cv_file_name || '',
+      cv_mime_type: candidate.cv_mime_type || '',
+      cv_size: candidate.cv_size || null,
     });
     setStatus({ type: null, message: '' });
   };
@@ -130,9 +153,21 @@ const AdminCandidates = () => {
         };
       }
 
+      let cvPayload = {
+        cv_path: form.cv_path || null,
+        cv_file_name: form.cv_file_name || null,
+        cv_mime_type: form.cv_mime_type || null,
+        cv_size: form.cv_size || null,
+      };
+
+      if (form.cvFile) {
+        cvPayload = await uploadCandidateCv(form.cvFile, election.id);
+      }
+
       const payload = {
         ...form,
         ...photoPayload,
+        ...cvPayload,
         election_id: election.id,
         registration_no: normalizeRegistrationNo(form.registration_no),
       };
@@ -195,7 +230,38 @@ const AdminCandidates = () => {
 
               <label className="block">
                 <span className="field-label">Nominee Message</span>
-                <textarea name="message" value={form.message} onChange={updateField} rows="4" maxLength="1000" className="field-input" />
+                <textarea name="message" value={form.message} onChange={updateField} rows="4" maxLength="1000" className="field-input" placeholder="Short message shown on nominee cards." />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="field-label">Current Designation</span>
+                  <input name="current_designation" value={form.current_designation} onChange={updateField} maxLength="160" className="field-input" placeholder="Professor, Consultant, Senior Resident..." />
+                </label>
+                <label className="block">
+                  <span className="field-label">Institution</span>
+                  <input name="institution" value={form.institution} onChange={updateField} maxLength="200" className="field-input" placeholder="Hospital / institute" />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="field-label">Qualification</span>
+                <input name="qualification" value={form.qualification} onChange={updateField} maxLength="200" className="field-input" placeholder="MD Pathology, DNB, Fellowship..." />
+              </label>
+
+              <label className="block">
+                <span className="field-label">Short CV / Profile Summary</span>
+                <textarea name="profile_summary" value={form.profile_summary} onChange={updateField} rows="5" maxLength="2500" className="field-input" placeholder="Brief professional profile for voters." />
+              </label>
+
+              <label className="block">
+                <span className="field-label">Key Achievements</span>
+                <textarea name="key_achievements" value={form.key_achievements} onChange={updateField} rows="4" maxLength="2500" className="field-input" placeholder="Awards, publications, society work, academic contributions..." />
+              </label>
+
+              <label className="block">
+                <span className="field-label">Vision / Agenda for Term</span>
+                <textarea name="agenda" value={form.agenda} onChange={updateField} rows="4" maxLength="2500" className="field-input" placeholder="What the nominee plans to do if elected." />
               </label>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -218,6 +284,36 @@ const AdminCandidates = () => {
                   onChange={updateField}
                   className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-bold file:text-white hover:file:bg-blue-900"
                 />
+              </label>
+
+              <label className="block">
+                <span className="field-label">Short CV Upload</span>
+                <input
+                  type="file"
+                  name="cvFile"
+                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={updateField}
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-bold file:text-white hover:file:bg-blue-900"
+                />
+                {form.cv_file_name && (
+                  <div className="mt-2 flex flex-col gap-2 rounded-lg border border-gray-100 bg-white p-3 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="min-w-0 break-all">Current CV: {form.cv_file_name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setForm((current) => ({
+                        ...current,
+                        cvFile: null,
+                        cv_path: '',
+                        cv_file_name: '',
+                        cv_mime_type: '',
+                        cv_size: null,
+                      }))}
+                      className="rounded-lg border border-red-100 px-3 py-1.5 font-bold text-red-700 hover:bg-red-50"
+                    >
+                      Remove CV
+                    </button>
+                  </div>
+                )}
               </label>
 
               <StatusMessage status={status} />
@@ -258,6 +354,12 @@ const AdminCandidates = () => {
                           <p className="mt-1 text-sm font-bold text-gray-700">{candidate.position}</p>
                           <p className="mt-1 text-xs font-semibold text-gray-500">Reg. {candidate.registration_no}</p>
                           {candidate.message && <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600">{candidate.message}</p>}
+                          <div className="mt-3 grid gap-2 text-xs font-semibold text-gray-500 sm:grid-cols-2">
+                            {candidate.current_designation && <p>Designation: {candidate.current_designation}</p>}
+                            {candidate.institution && <p>Institution: {candidate.institution}</p>}
+                            {candidate.qualification && <p>Qualification: {candidate.qualification}</p>}
+                            {candidate.cv_file_name && <p>CV: {candidate.cv_file_name}</p>}
+                          </div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">

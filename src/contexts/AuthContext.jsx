@@ -114,9 +114,42 @@ export const AuthProvider = ({ children }) => {
     return { ok: true, profile };
   }, [loadProfile]);
 
+  const validateRegistrationNumberForSignup = useCallback(async (registrationNo) => {
+    const normalizedRegistrationNo = normalizeRegistrationNo(registrationNo);
+
+    if (!normalizedRegistrationNo) {
+      return { ok: false, message: friendlyRegistrationError('REGISTRATION_REQUIRED') };
+    }
+
+    const { data, error } = await supabase.rpc('check_voter_registration_number', {
+      p_registration_no: normalizedRegistrationNo,
+    });
+
+    if (error) {
+      logDevError('Registration number check failed:', error);
+      return { ok: false, message: friendlyAuthError(error.message) };
+    }
+
+    const result = Array.isArray(data) ? data[0] : data;
+
+    if (!result?.ok) {
+      return {
+        ok: false,
+        message: friendlyRegistrationError(result?.code, result?.message),
+      };
+    }
+
+    return { ok: true, registrationNo: normalizedRegistrationNo };
+  }, []);
+
   const signUp = useCallback(async ({ email, password, fullName, registrationNo }) => {
     if (!isSupabaseConfigured) {
       return { ok: false, message: 'Supabase is not configured yet.' };
+    }
+
+    const registrationCheck = await validateRegistrationNumberForSignup(registrationNo);
+    if (!registrationCheck.ok) {
+      return registrationCheck;
     }
 
     const redirectTo = `${window.location.origin}/auth/callback`;
@@ -127,7 +160,7 @@ export const AuthProvider = ({ children }) => {
         emailRedirectTo: redirectTo,
         data: {
           full_name: fullName.trim(),
-          registration_no: normalizeRegistrationNo(registrationNo),
+          registration_no: registrationCheck.registrationNo,
         },
       },
     });
@@ -155,11 +188,18 @@ export const AuthProvider = ({ children }) => {
     }
 
     return { ok: true, needsVerification: true };
-  }, [loadProfile]);
+  }, [loadProfile, validateRegistrationNumberForSignup]);
 
   const requestMagicLink = useCallback(async ({ email, fullName = '', registrationNo = '', shouldCreateUser = false }) => {
     if (!isSupabaseConfigured) {
       return { ok: false, message: 'Supabase is not configured yet.' };
+    }
+
+    if (shouldCreateUser) {
+      const registrationCheck = await validateRegistrationNumberForSignup(registrationNo);
+      if (!registrationCheck.ok) {
+        return registrationCheck;
+      }
     }
 
     const redirectTo = `${window.location.origin}/auth/callback`;
@@ -185,7 +225,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return { ok: true };
-  }, []);
+  }, [validateRegistrationNumberForSignup]);
 
   const sendPasswordReset = useCallback(async ({ email }) => {
     if (!isSupabaseConfigured) {
@@ -326,6 +366,24 @@ function friendlyAuthError(message = '') {
   const normalized = message.toLowerCase();
 
   if (
+    normalized.includes('registration_not_found')
+    || normalized.includes('registration number is not in the active member directory')
+  ) {
+    return friendlyRegistrationError('REGISTRATION_NOT_FOUND');
+  }
+
+  if (
+    normalized.includes('registration_already_used')
+    || normalized.includes('profiles_registration_no_unique')
+  ) {
+    return friendlyRegistrationError('REGISTRATION_ALREADY_USED');
+  }
+
+  if (normalized.includes('registration_required')) {
+    return friendlyRegistrationError('REGISTRATION_REQUIRED');
+  }
+
+  if (
     normalized.includes('for security purposes')
     || normalized.includes('rate limit')
     || normalized.includes('over_email_send_rate_limit')
@@ -377,8 +435,7 @@ function friendlyAuthError(message = '') {
     return 'Please use a stronger password.';
   }
 
-  // Surface the raw message so we can diagnose, instead of hiding it.
-  return message ? `Auth error: ${message}` : 'Something went wrong. Please try again.';
+  return message ? 'The sign-in request could not be completed. Please check the details and try again.' : 'Something went wrong. Please try again.';
 }
 
 function extractRetryAfter(error) {
@@ -391,8 +448,19 @@ function extractRetryAfter(error) {
 function friendlyProfileError(message = '') {
   const normalized = message.toLowerCase();
 
-  if (normalized.includes('profiles_registration_no_unique')) {
-    return 'This registration number is already linked to another account.';
+  if (
+    normalized.includes('profiles_registration_no_unique')
+    || normalized.includes('registration_already_used')
+  ) {
+    return friendlyRegistrationError('REGISTRATION_ALREADY_USED');
+  }
+
+  if (normalized.includes('registration_not_found')) {
+    return friendlyRegistrationError('REGISTRATION_NOT_FOUND');
+  }
+
+  if (normalized.includes('registration_required')) {
+    return friendlyRegistrationError('REGISTRATION_REQUIRED');
   }
 
   if (normalized.includes('row-level security')) {
@@ -404,4 +472,17 @@ function friendlyProfileError(message = '') {
   }
 
   return 'Profile could not be completed. Please check the details and try again.';
+}
+
+function friendlyRegistrationError(code, fallbackMessage = '') {
+  switch (code) {
+    case 'REGISTRATION_REQUIRED':
+      return 'Registration number is required.';
+    case 'REGISTRATION_NOT_FOUND':
+      return 'This registration number is not in the active member directory. Please check the number or contact admin.';
+    case 'REGISTRATION_ALREADY_USED':
+      return 'This registration number is already linked to another account.';
+    default:
+      return fallbackMessage || 'Registration number could not be verified. Please check the number and try again.';
+  }
 }

@@ -1,16 +1,48 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
+import MarkdownBlock from '../components/common/MarkdownBlock';
 import PaymentQR from '../images/qr.png';
 import { logDevError } from '../lib/logger';
 import {
-  getMembershipPlan,
   lookupMembershipStatus,
-  membershipPlans,
   membershipStatusLabels,
   submitMembershipApplication,
 } from '../lib/membership';
+import {
+  fallbackMembershipCategories,
+  fallbackMembershipPlans,
+  fallbackPortalSettings,
+  getMembershipPortalAssetUrl,
+  loadMembershipPortalData,
+} from '../lib/membershipConfig';
+
+const defaultFormData = (plans = fallbackMembershipPlans, categories = fallbackMembershipCategories) => {
+  const plan = plans[0] || fallbackMembershipPlans[0];
+  const category = categories[0] || fallbackMembershipCategories[0];
+
+  return {
+    Name: '',
+    Institution: '',
+    Qualification: '',
+    Practicing: 'Yes',
+    StudentStatus: '',
+    Address: '',
+    Email: '',
+    Phone: '',
+    MembershipType: plan.value,
+    Amount: plan.amountLabel,
+    TransactionDetails: '',
+    Interest: category.value || category.label,
+    photo: null,
+    paymentProof: null,
+  };
+};
+
+const findPlan = (plans, value) => (
+  plans.find((plan) => plan.value === value || plan.slug === value) || plans[0] || fallbackMembershipPlans[0]
+);
 
 const MembershipRegistration = () => {
   const [searchParams] = useSearchParams();
@@ -18,22 +50,11 @@ const MembershipRegistration = () => {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'status' ? 'status' : 'register'); // 'register' or 'status'
 
   // --- STATE: NEW REGISTRATION ---
-  const [formData, setFormData] = useState({
-    Name: '',
-    Institution: '',
-    Qualification: '', 
-    Practicing: 'Yes',
-    StudentStatus: '',
-    Address: '',
-    Email: '',
-    Phone: '',
-    MembershipType: 'life',
-    Amount: '5,000 INR',
-    TransactionDetails: '',
-    Interest: 'I am an academic pathologist',
-    photo: null,
-    paymentProof: null,
-  });
+  const [settings, setSettings] = useState(fallbackPortalSettings);
+  const [planOptions, setPlanOptions] = useState(fallbackMembershipPlans);
+  const [categoryOptions, setCategoryOptions] = useState(fallbackMembershipCategories);
+  const [paymentQrUrl, setPaymentQrUrl] = useState(PaymentQR);
+  const [formData, setFormData] = useState(defaultFormData());
   const [regStatus, setRegStatus] = useState(null); // null, 'submitting', 'success', 'error'
   const [errors, setErrors] = useState({}); // State for Validation Errors
 
@@ -42,12 +63,63 @@ const MembershipRegistration = () => {
   const [statusResult, setStatusResult] = useState(null); // null, 'loading', 'found', 'not_found', 'error'
   const [memberData, setMemberData] = useState(null);
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadPortalConfig() {
+      try {
+        const data = await loadMembershipPortalData();
+        if (!mounted) return;
+
+        const nextPlans = data.plans.length ? data.plans : fallbackMembershipPlans;
+        const nextCategories = data.categories.length ? data.categories : fallbackMembershipCategories;
+
+        setSettings(data.settings);
+        setPlanOptions(nextPlans);
+        setCategoryOptions(nextCategories);
+        setFormData((current) => {
+          const selectedPlan = findPlan(nextPlans, current.MembershipType);
+          const selectedCategory = nextCategories.find((category) => category.value === current.Interest || category.label === current.Interest)
+            || nextCategories[0]
+            || fallbackMembershipCategories[0];
+
+          return {
+            ...current,
+            MembershipType: selectedPlan.value,
+            Amount: selectedPlan.amountLabel,
+            Interest: selectedCategory.value || selectedCategory.label,
+          };
+        });
+
+        if (data.settings.qr_image_path) {
+          try {
+            const url = await getMembershipPortalAssetUrl(data.settings.qr_image_path, 3600);
+            if (mounted) setPaymentQrUrl(url || PaymentQR);
+          } catch (error) {
+            logDevError('Membership QR image could not be loaded:', error);
+            if (mounted) setPaymentQrUrl(PaymentQR);
+          }
+        } else {
+          setPaymentQrUrl(PaymentQR);
+        }
+      } catch (error) {
+        logDevError('Membership portal config load failed:', error);
+      }
+    }
+
+    loadPortalConfig();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // --- HANDLERS: REGISTRATION ---
   const handleChange = (e) => {
     const nextValue = e.target.value;
     const nextData = { ...formData, [e.target.name]: nextValue };
     if (e.target.name === 'MembershipType') {
-      nextData.Amount = getMembershipPlan(nextValue).amountLabel;
+      nextData.Amount = findPlan(planOptions, nextValue).amountLabel;
     }
     setFormData(nextData);
     // Clear error when user starts typing
@@ -205,11 +277,7 @@ const MembershipRegistration = () => {
       });
       if (!result.ok) throw new Error(result.message);
       setRegStatus('success');
-      setFormData({
-        Name: '', Institution: '', Qualification: '', Practicing: 'Yes', StudentStatus: '', 
-        Address: '', Email: '', Phone: '', MembershipType: 'life', 
-        Amount: '5,000 INR', TransactionDetails: '', Interest: 'I am an academic pathologist', photo: null, paymentProof: null,
-      });
+      setFormData(defaultFormData(planOptions, categoryOptions));
       setErrors({});
     } catch (error) {
       logDevError("Membership application submit failed:", error);
@@ -260,8 +328,8 @@ const MembershipRegistration = () => {
         
         {/* Header with Tabs */}
         <div className="bg-primary text-white p-8 text-center">
-          <h1 className="text-3xl font-bold font-display">Membership Portal</h1>
-          <p className="mt-2 opacity-90 mb-6">Join the Society or Manage your Membership</p>
+          <h1 className="text-3xl font-bold font-display">{settings.portal_title}</h1>
+          <p className="mt-2 opacity-90 mb-6">{settings.portal_subtitle}</p>
           
           <div className="flex flex-wrap justify-center gap-4">
             <button 
@@ -284,16 +352,18 @@ const MembershipRegistration = () => {
             >
               Check Status / Download
             </button>
-            <button 
-              onClick={() => setActiveTab('promo')}
-              className={`px-6 py-2 rounded-full font-bold transition-all ${
-                activeTab === 'promo' 
-                ? 'bg-white text-primary shadow-lg' 
-                : 'bg-primary-dark text-white/70 border border-white/30 hover:bg-primary-light'
-              }`}
-            >
-              Promotional Drive
-            </button>
+            {settings.promo_enabled && (
+              <button
+                onClick={() => setActiveTab('promo')}
+                className={`px-6 py-2 rounded-full font-bold transition-all ${
+                  activeTab === 'promo'
+                  ? 'bg-white text-primary shadow-lg'
+                  : 'bg-primary-dark text-white/70 border border-white/30 hover:bg-primary-light'
+                }`}
+              >
+                Promotional Drive
+              </button>
+            )}
           </div>
         </div>
 
@@ -304,32 +374,25 @@ const MembershipRegistration = () => {
             <div className="lg:col-span-1 p-8 bg-gray-50 dark:bg-gray-700 border-r border-gray-200 dark:border-gray-600">
               <h3 className="text-xl font-bold text-primary dark:text-white mb-6 flex items-center">
                 <span className="material-symbols-outlined mr-2">payments</span>
-                Payment Information
+                {settings.payment_title}
               </h3>
               
               <div className="space-y-6 text-sm text-gray-700 dark:text-gray-300">
                 <div className="bg-white dark:bg-gray-600 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-500">
-                  <h4 className="font-bold text-lg mb-3 text-primary dark:text-white border-b pb-2">Bank Transfer</h4>
-                  <div className="space-y-2">
-                      <p><strong>Account Name:</strong> DELHI CH OF IAPM</p>
-                      <p><strong>Account No:</strong> 1210463576</p>
-                      <p><strong>Bank Details:</strong> CENTRAL BANK OF INDIA</p>
-                      <p><strong>Branch:</strong> LADY HARDINGE MED COLL AND HOSPITAL BRANCH, OPP PANCHKUIAN ROAD</p>
-                      <p><strong>IFSC Code:</strong> CBIN0283462</p>
-                  </div>
+                  <MarkdownBlock content={settings.payment_markdown} />
                 </div>
 
                 <div className="bg-white dark:bg-gray-600 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-500 text-center">
                   <h4 className="font-bold text-lg mb-3 text-primary dark:text-white border-b pb-2 text-left">Scan QR to Pay</h4>
-                  <a href={PaymentQR} target="_blank" rel="noopener noreferrer" className="w-full block">
+                  <a href={paymentQrUrl} target="_blank" rel="noopener noreferrer" className="w-full block">
                     <img 
-                      src={PaymentQR} 
+                      src={paymentQrUrl}
                       alt="Payment QR Code" 
                       className="w-full h-auto mx-auto object-contain border rounded-lg mb-2"
-                      onError={(e) => {e.target.style.display='none'; e.target.parentNode.innerHTML+='<p class="text-red-500 text-xs">QR Code image not found</p>'}}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   </a>
-                  <p className="text-xs text-gray-500 dark:text-gray-300">Accepts UPI, GPay, Paytm</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-300">{settings.qr_caption}</p>
                 </div>
               </div>
             </div>
@@ -340,9 +403,7 @@ const MembershipRegistration = () => {
                 <div className="text-center py-12">
                   <span className="material-symbols-outlined text-6xl text-green-500 mb-4">check_circle</span>
                   <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Application Submitted!</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    We have received your details. You can check your status in the "Check Status" tab.
-                  </p>
+                  <MarkdownBlock content={settings.registration_success_markdown} className="text-center text-gray-600 dark:text-gray-300" />
                   <button onClick={() => setRegStatus(null)} className="mt-6 text-primary font-bold hover:underline">
                     Submit another response
                   </button>
@@ -475,7 +536,7 @@ const MembershipRegistration = () => {
                           <div>
                               <label className="form-label">Membership Type <span className="text-red-500">*</span></label>
                               <select name="MembershipType" value={formData.MembershipType} onChange={handleChange} className="form-input">
-                                  {membershipPlans.map((plan) => (
+                                  {planOptions.map((plan) => (
                                     <option key={plan.value} value={plan.value}>{plan.label}</option>
                                   ))}
                               </select>
@@ -513,10 +574,11 @@ const MembershipRegistration = () => {
                     <div>
                       <label className="form-label">Category <span className="text-red-500">*</span></label>
                       <select name="Interest" value={formData.Interest} onChange={handleChange} className="form-input">
-                        <option>I am an academic pathologist</option>
-                        <option>I am a practicing pathologist</option>
-                        <option>I am a post graduate student/ fellow</option>
-                        <option>I am a pathologist working outside India</option>
+                        {categoryOptions.map((category) => (
+                          <option key={category.slug || category.label} value={category.value || category.label}>
+                            {category.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -538,9 +600,7 @@ const MembershipRegistration = () => {
           <div className="p-12 max-w-2xl mx-auto min-h-[400px]">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Check Application Status</h2>
-              <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
-                Enter the email address you used during registration to check your status and download documents.
-              </p>
+              <MarkdownBlock content={settings.status_intro_markdown} className="text-center text-gray-600 dark:text-gray-300" />
             </div>
 
             <div className="flex gap-3 mb-8">
@@ -629,21 +689,11 @@ const MembershipRegistration = () => {
         )}
 
         {/* === TAB 3: PROMOTIONAL DRIVE === */}
-        {activeTab === 'promo' && (
+        {activeTab === 'promo' && settings.promo_enabled && (
           <div className="p-12 max-w-3xl mx-auto min-h-[300px]">
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-8 text-center shadow-sm">
-              <h2 className="text-2xl font-bold text-primary mb-3">Promotional Membership Drive</h2>
-              <p className="text-gray-700 mb-4">
-                Pathologists can become members by paying only Rs 1,500 until Dec 31, 2026.
-              </p>
-              <div className="mt-5 rounded-lg bg-white p-4 text-left text-sm text-gray-700">
-                <p className="font-bold text-primary">Membership numbering rule</p>
-                <p className="mt-2">Until 31 Dec 2026, Rs 1,500 promotional payments receive an L-series number.</p>
-                <p>From 1 Jan 2027, Rs 5,000 Life members receive L-series, Rs 1,500 Ad Hoc members receive AH-series, and USD 200 Overseas members receive OS-series numbers.</p>
-              </div>
-              <p className="text-sm text-gray-600">
-                Please select the appropriate membership type in the application form and complete the payment before the deadline.
-              </p>
+              <h2 className="text-2xl font-bold text-primary mb-3">{settings.promo_title}</h2>
+              <MarkdownBlock content={settings.promo_markdown} className="text-left text-gray-700" />
             </div>
           </div>
         )}
