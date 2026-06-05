@@ -155,18 +155,21 @@ const AdminVoteMonitor = () => {
 };
 
 const ElectionSelector = ({ elections, activeSlug }) => (
-  <div className="flex flex-wrap gap-2">
-    {elections.slice(0, 6).map((election) => (
-      <Link
-        key={election.id}
-        to={`/admin/elections/${election.slug}/votes`}
-        className={`rounded-lg px-3 py-2 text-sm font-bold transition ${
-          activeSlug === election.slug ? 'bg-primary text-white' : 'border border-gray-200 bg-white text-primary hover:bg-gray-50'
-        }`}
-      >
-        {election.title}
-      </Link>
-    ))}
+  <div className="max-w-full overflow-x-auto pb-1 xl:max-w-xl">
+    <div className="flex w-max min-w-full gap-2">
+      {elections.map((election) => (
+        <Link
+          key={election.id}
+          to={`/admin/elections/${election.slug}/votes`}
+          className={`max-w-[18rem] shrink-0 truncate rounded-lg px-3 py-2 text-sm font-bold transition ${
+            activeSlug === election.slug ? 'bg-primary text-white' : 'border border-gray-200 bg-white text-primary hover:bg-gray-50'
+          }`}
+          title={election.title}
+        >
+          {election.title}
+        </Link>
+      ))}
+    </div>
   </div>
 );
 

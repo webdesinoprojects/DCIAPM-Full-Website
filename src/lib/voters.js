@@ -41,6 +41,22 @@ export async function setVoterActive(id, isActive) {
   return data;
 }
 
+export async function deleteVoter(id) {
+  if (!id) throw new Error('Voter is required.');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', id)
+    .eq('role', 'user')
+    .select('id, full_name, email')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('No voter profile was deleted.');
+  return data;
+}
+
 export async function resolveVoterPhotoUrl(voter) {
   if (!voter) return null;
   if (voter.photo_url) return voter.photo_url;

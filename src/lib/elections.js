@@ -354,6 +354,9 @@ export async function countVotesForCandidate(candidateId) {
 }
 
 export async function deleteElection(id) {
+  const voteDelete = await supabase.from('election_votes').delete().eq('election_id', id);
+  if (voteDelete.error) throw voteDelete.error;
+
   const { error } = await supabase.from('elections').delete().eq('id', id);
   if (error) throw error;
 }

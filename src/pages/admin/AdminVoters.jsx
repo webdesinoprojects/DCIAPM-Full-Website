@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import SEO from '../../components/SEO';
 import {
+  deleteVoter,
   listVoters,
   isVoterProfileComplete,
   formatVoterDate,
@@ -18,6 +20,8 @@ const AdminVoters = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [profileFilter, setProfileFilter] = useState('all');
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [actionStatus, setActionStatus] = useState({ type: null, message: '' });
 
   const load = useCallback(async () => {
     try {
@@ -77,12 +81,45 @@ const AdminVoters = () => {
   const activeCount = voters.filter((v) => v.is_active).length;
   const completeCount = voters.filter(isVoterProfileComplete).length;
 
+  const runDelete = async () => {
+    if (!pendingDelete) return;
+
+    try {
+      await deleteVoter(pendingDelete.id);
+      setPendingDelete(null);
+      setActionStatus({ type: 'success', message: 'Voter profile deleted.' });
+      await load();
+    } catch (deleteError) {
+      setActionStatus({ type: 'error', message: deleteError.message || 'Voter could not be deleted.' });
+    }
+  };
+
   return (
     <AdminShell
       title="Voter Details"
       description="Every registered voter (users with role 'user') and their profile data."
     >
       <SEO title="Admin Voters" description="Voter list" keywords="admin voters dc-iapm" />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete voter?"
+        body={`Delete ${pendingDelete?.full_name || pendingDelete?.email || 'this voter'} from the voter list? Their recorded vote rows are also removed by the database cascade. This does not delete the Supabase Auth login itself.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={runDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+
+      {actionStatus.message && (
+        <p className={`mb-4 rounded-lg border p-4 text-sm font-semibold ${
+          actionStatus.type === 'success'
+            ? 'border-green-100 bg-green-50 text-green-700'
+            : 'border-red-100 bg-red-50 text-red-700'
+        }`}>
+          {actionStatus.message}
+        </p>
+      )}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <StatTile label="Total voters" value={voters.length} />
@@ -182,13 +219,22 @@ const AdminVoters = () => {
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatVoterDate(voter.created_at)}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <Link
-                          to={`/admin/voters/${voter.id}`}
-                          className="inline-flex items-center rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-primary hover:bg-gray-50"
-                        >
-                          View
-                          <span className="material-icons-outlined ml-1 text-sm">arrow_forward</span>
-                        </Link>
+                        <div className="inline-flex items-center gap-2">
+                          <Link
+                            to={`/admin/voters/${voter.id}`}
+                            className="inline-flex items-center rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-primary hover:bg-gray-50"
+                          >
+                            View
+                            <span className="material-icons-outlined ml-1 text-sm">arrow_forward</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setPendingDelete(voter)}
+                            className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

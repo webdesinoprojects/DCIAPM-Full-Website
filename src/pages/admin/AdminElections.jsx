@@ -5,7 +5,6 @@ import SEO from '../../components/SEO';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import ElectionStatusPill from '../../components/elections/ElectionStatusPill';
 import {
-  archiveElection,
   deleteElection,
   electionRuntimeStatus,
   formatDateTime,
@@ -45,13 +44,8 @@ const AdminElections = () => {
   const runPendingAction = async () => {
     if (!pendingAction) return;
     try {
-      if (pendingAction.kind === 'archive') {
-        await archiveElection(pendingAction.election.id);
-        setActionStatus({ type: 'success', message: 'Election archived. It is hidden from voters but kept for audit.' });
-      } else if (pendingAction.kind === 'delete') {
-        await deleteElection(pendingAction.election.id);
-        setActionStatus({ type: 'success', message: 'Election deleted.' });
-      }
+      await deleteElection(pendingAction.election.id);
+      setActionStatus({ type: 'success', message: 'Election deleted.' });
       setPendingAction(null);
       await loadElections();
     } catch (actionError) {
@@ -62,7 +56,7 @@ const AdminElections = () => {
   const requestDelete = (election) => {
     const hasVotes = (voteCounts[election.id] || 0) > 0;
     setPendingAction({
-      kind: hasVotes ? 'archive' : 'delete',
+      kind: 'delete',
       election,
       hasVotes,
     });
@@ -91,14 +85,14 @@ const AdminElections = () => {
 
       <ConfirmDialog
         open={Boolean(pendingAction)}
-        title={pendingAction?.kind === 'archive' ? 'Archive election?' : 'Delete election?'}
+        title="Delete election?"
         body={
-          pendingAction?.kind === 'archive'
-            ? `"${pendingAction?.election.title}" already has votes recorded. To keep the audit trail intact, it will be archived (hidden from voters) instead of deleted. Votes stay untouched.`
-            : `"${pendingAction?.election.title}" has no recorded votes yet, so it can be deleted permanently. Nominees attached to it will also be removed. This cannot be undone.`
+          pendingAction?.hasVotes
+            ? `"${pendingAction?.election.title}" has recorded votes. Deleting it will permanently remove the election, nominees, and all vote records. This cannot be undone.`
+            : `"${pendingAction?.election.title}" will be permanently deleted. Nominees attached to it will also be removed. This cannot be undone.`
         }
-        confirmLabel={pendingAction?.kind === 'archive' ? 'Archive' : 'Delete'}
-        destructive={pendingAction?.kind === 'delete'}
+        confirmLabel="Delete"
+        destructive
         onConfirm={runPendingAction}
         onCancel={() => setPendingAction(null)}
       />
@@ -167,7 +161,7 @@ const AdminElections = () => {
                             onClick={() => requestDelete(election)}
                             className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
                           >
-                            {(voteCounts[election.id] || 0) > 0 ? 'Archive' : 'Delete'}
+                            Delete
                           </button>
                         </div>
                       </td>
