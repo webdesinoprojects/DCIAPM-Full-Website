@@ -75,3 +75,10 @@
 .hover\:pause:hover {
   animation-play-state: paused !important;
 }
+
+@layer utilities {
+  .safe-wrap {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}

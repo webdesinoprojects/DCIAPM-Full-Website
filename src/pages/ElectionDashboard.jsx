@@ -59,7 +59,7 @@ const ElectionDashboard = () => {
   );
 
   return (
-    <main className="min-h-screen bg-[#f7f9fc]">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f9fc]">
       <SEO
         title="Election Dashboard"
         description="View active SGIHPBP elections and cast verified votes."
@@ -71,8 +71,8 @@ const ElectionDashboard = () => {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-gold-DEFAULT">Member Voting Area</p>
-              <h1 className="mt-3 font-display text-3xl font-bold text-primary md:text-4xl">Elections & Nominations</h1>
-              <p className="mt-3 max-w-2xl text-gray-600">
+              <h1 className="safe-wrap mt-3 font-display text-2xl font-bold leading-tight text-primary sm:text-3xl md:text-4xl">Elections & Nominations</h1>
+              <p className="safe-wrap mt-3 max-w-2xl text-gray-600">
                 Review nominees, open a shareable voting link, and cast one verified vote per election.
               </p>
             </div>
@@ -95,7 +95,7 @@ const ElectionDashboard = () => {
             </div>
             <Link
               to="/complete-profile"
-              className="inline-flex items-center justify-center rounded-lg bg-amber-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-800"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-amber-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-800 sm:w-auto"
             >
               <span className="material-icons-outlined mr-2 text-base">add_a_photo</span>
               Complete profile
@@ -106,8 +106,8 @@ const ElectionDashboard = () => {
         <div className="mb-6 flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Signed in</p>
-            <p className="mt-1 font-bold text-primary">{profile?.full_name || user?.email}</p>
-            <p className="text-sm text-gray-500">{profile?.registration_no || user?.email}</p>
+            <p className="safe-wrap mt-1 font-bold text-primary">{profile?.full_name || user?.email}</p>
+            <p className="safe-wrap text-sm text-gray-500">{profile?.registration_no || user?.email}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <ViewToggle value={viewMode} onChange={setViewMode} />
@@ -134,24 +134,24 @@ const ElectionDashboard = () => {
 
         <div className="grid gap-8">
           {elections.map((election) => (
-            <section key={election.id} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:p-6">
+            <section key={election.id} className="max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5 md:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <ElectionStatusPill election={election} />
                     <CountdownBadge election={election} />
                   </div>
-                  <h2 className="mt-4 text-2xl font-bold text-primary">{election.title}</h2>
+                  <h2 className="safe-wrap mt-4 text-xl font-bold leading-tight text-primary sm:text-2xl">{election.title}</h2>
                   {election.description && (
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">{election.description}</p>
+                    <p className="safe-wrap mt-2 max-w-3xl text-sm leading-6 text-gray-600">{election.description}</p>
                   )}
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <p className="safe-wrap mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     {formatDateTime(election.starts_at)} to {formatDateTime(election.ends_at)}
                   </p>
                 </div>
                 <Link
                   to={`/elections/${election.slug}`}
-                  className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-900"
+                  className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-900 sm:w-auto"
                 >
                   View all nominees
                   <span className="material-icons-outlined ml-2 text-base">arrow_forward</span>
@@ -191,17 +191,17 @@ const CandidateCard = ({ election, candidate, vote, profile }) => {
   const selected = vote?.candidate_id === candidate.id;
 
   return (
-    <article className="rounded-lg border border-gray-100 bg-[#fbfcfe] p-5">
+    <article className="max-w-full overflow-hidden rounded-lg border border-gray-100 bg-[#fbfcfe] p-4 sm:p-5">
       <div className="flex items-start gap-4">
-        <CandidateAvatar candidate={candidate} />
+        <CandidateAvatar candidate={candidate} className="flex-shrink-0" />
         <div className="min-w-0">
-          <h3 className="font-bold text-primary">{candidate.full_name}</h3>
-          <p className="mt-1 text-sm font-semibold text-gray-600">{candidate.position}</p>
-          <p className="mt-1 text-xs text-gray-500">Reg. {candidate.registration_no}</p>
+          <h3 className="safe-wrap font-bold text-primary">{candidate.full_name}</h3>
+          <p className="safe-wrap mt-1 text-sm font-semibold text-gray-600">{candidate.position}</p>
+          <p className="safe-wrap mt-1 text-xs text-gray-500">Reg. {candidate.registration_no}</p>
         </div>
       </div>
       {candidate.message && (
-        <p className="mt-4 line-clamp-3 text-sm leading-6 text-gray-600">{candidate.message}</p>
+        <p className="safe-wrap mt-4 line-clamp-3 text-sm leading-6 text-gray-600">{candidate.message}</p>
       )}
       <Link
         to={`/elections/${election.slug}/candidates/${candidate.slug}`}

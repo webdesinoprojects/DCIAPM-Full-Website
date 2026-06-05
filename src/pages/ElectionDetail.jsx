@@ -63,7 +63,7 @@ const ElectionDetail = () => {
   if (error) return <PageState icon="error" title="Election unavailable" text={error} />;
 
   return (
-    <main className="min-h-screen bg-[#f7f9fc]">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f9fc]">
       <SEO
         title={election.title}
         description={election.description || 'Election nominees and voting page.'}
@@ -77,20 +77,20 @@ const ElectionDetail = () => {
             Back to dashboard
           </Link>
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap gap-2">
                 <ElectionStatusPill election={election} />
                 <CountdownBadge election={election} />
               </div>
-              <h1 className="mt-4 font-display text-3xl font-bold text-primary md:text-4xl">{election.title}</h1>
-              {election.description && <p className="mt-3 max-w-3xl text-gray-600">{election.description}</p>}
-              <p className="mt-3 text-sm font-semibold text-gray-500">
+              <h1 className="safe-wrap mt-4 font-display text-2xl font-bold leading-tight text-primary sm:text-3xl md:text-4xl">{election.title}</h1>
+              {election.description && <p className="safe-wrap mt-3 max-w-3xl text-gray-600">{election.description}</p>}
+              <p className="safe-wrap mt-3 text-sm font-semibold text-gray-500">
                 {formatDateTime(election.starts_at)} to {formatDateTime(election.ends_at)}
               </p>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-[#fbfcfe] px-5 py-4">
+            <div className="max-w-full overflow-hidden rounded-lg border border-gray-200 bg-[#fbfcfe] px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Your vote</p>
-              <p className="mt-1 font-bold text-primary">{vote?.candidate?.full_name || 'Not recorded yet'}</p>
+              <p className="safe-wrap mt-1 font-bold text-primary">{vote?.candidate?.full_name || 'Not recorded yet'}</p>
             </div>
           </div>
         </div>
@@ -107,7 +107,7 @@ const ElectionDetail = () => {
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-primary">Nominees</h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="safe-wrap mt-1 text-sm text-gray-600">
               Select a nominee card or row to open the dedicated voting link.
             </p>
           </div>
@@ -130,7 +130,7 @@ const ElectionDetail = () => {
             ))}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-lg border border-gray-100 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-100 text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                 <tr>
@@ -181,25 +181,25 @@ const ElectionDetail = () => {
 const NomineeCard = ({ election, candidate, selected, voteState }) => (
   <Link
     to={`/elections/${election.slug}/candidates/${candidate.slug}`}
-    className="group rounded-lg border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+    className="group block max-w-full overflow-hidden rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:p-5"
   >
     <div className="flex items-start gap-4">
-      <CandidateAvatar candidate={candidate} size="lg" />
+      <CandidateAvatar candidate={candidate} size="lg" className="flex-shrink-0" />
       <div className="min-w-0">
-        <h3 className="text-xl font-bold text-primary group-hover:underline">{candidate.full_name}</h3>
-        <p className="mt-1 text-sm font-bold text-gold-DEFAULT">{candidate.position}</p>
-        <p className="mt-1 text-xs font-semibold text-gray-500">Reg. {candidate.registration_no}</p>
-        {candidate.current_designation && <p className="mt-2 text-sm font-semibold text-gray-700">{candidate.current_designation}</p>}
-        {candidate.institution && <p className="mt-1 text-xs font-semibold text-gray-500">{candidate.institution}</p>}
+        <h3 className="safe-wrap text-xl font-bold text-primary group-hover:underline">{candidate.full_name}</h3>
+        <p className="safe-wrap mt-1 text-sm font-bold text-gold-DEFAULT">{candidate.position}</p>
+        <p className="safe-wrap mt-1 text-xs font-semibold text-gray-500">Reg. {candidate.registration_no}</p>
+        {candidate.current_designation && <p className="safe-wrap mt-2 text-sm font-semibold text-gray-700">{candidate.current_designation}</p>}
+        {candidate.institution && <p className="safe-wrap mt-1 text-xs font-semibold text-gray-500">{candidate.institution}</p>}
       </div>
     </div>
     {candidate.message && (
-      <p className="mt-5 text-sm leading-6 text-gray-600">{candidate.message}</p>
+      <p className="safe-wrap mt-5 text-sm leading-6 text-gray-600">{candidate.message}</p>
     )}
     <div className="mt-4 flex flex-wrap gap-2">
-      {candidate.profile_summary && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Short CV added</span>}
-      {candidate.agenda && <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Agenda added</span>}
-      {candidate.cv_path && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">CV document</span>}
+      {candidate.profile_summary && <span className="safe-wrap rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Short CV added</span>}
+      {candidate.agenda && <span className="safe-wrap rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Agenda added</span>}
+      {candidate.cv_path && <span className="safe-wrap rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">CV document</span>}
     </div>
     <span className={`mt-5 inline-flex rounded-lg px-4 py-2 text-sm font-bold ${
       selected

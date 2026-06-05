@@ -142,15 +142,15 @@ const Header = ({ currentPage }) => {
     // Wrap with a React Fragment
     <>
       <header className="bg-white/80 dark:bg-primary/80 backdrop-blur-sm sticky top-0 z-50 shadow-md">
-        <nav className="w-full px-4 sm:px-6 lg:px-8 py-3 min-h-[5rem] flex items-center">
+        <nav className="w-full px-3 sm:px-6 lg:px-8 py-3 min-h-[5rem] flex items-center">
           <div className="flex items-center justify-between w-full">
-            <Link to="/" className="flex items-center space-x-3">
+            <Link to="/" className="flex min-w-0 items-center gap-3">
               <motion.img
                 alt="DC-IAPM Logo"
-                className="h-12 w-12 flex-shrink-0"
+                className="h-11 w-11 flex-shrink-0 sm:h-12 sm:w-12"
                 src={Logo}
               />
-              <div className="font-display font-bold text-[11px] sm:text-xs text-primary dark:text-white md:block w-52 lg:w-56 xl:w-64 leading-tight">
+              <div className="safe-wrap min-w-0 max-w-[calc(100vw-7rem)] font-display text-[11px] font-bold leading-tight text-primary dark:text-white sm:max-w-[13rem] sm:text-xs lg:w-56 lg:max-w-none xl:w-64">
                 Delhi Chapter of Indian Association of Pathologists and Microbiologists (DC-IAPM)
               </div>
             </Link>
@@ -254,10 +254,10 @@ const Header = ({ currentPage }) => {
             animate="visible"
             exit="exit"
           >
-            <div className="flex-shrink-0 flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 min-h-[5rem]">
-              <Link to="/" className="flex items-center space-x-3" onClick={() => setIsMenuOpen(false)}>
-                <img alt="DC-IAPM Logo" className="h-12 w-12 flex-shrink-0" src={Logo} />
-                <div className="font-display font-bold text-[11px] text-primary dark:text-white w-52 leading-tight">
+            <div className="flex-shrink-0 flex items-center justify-between gap-3 p-3 border-b border-gray-200 dark:border-gray-700 min-h-[5rem]">
+              <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                <img alt="DC-IAPM Logo" className="h-11 w-11 flex-shrink-0 sm:h-12 sm:w-12" src={Logo} />
+                <div className="safe-wrap min-w-0 max-w-[calc(100vw-7.5rem)] font-display text-[11px] font-bold leading-tight text-primary dark:text-white">
                   Delhi Chapter of Indian Association of Pathologists and Microbiologists (DC-IAPM)
                 </div>
               </Link>
