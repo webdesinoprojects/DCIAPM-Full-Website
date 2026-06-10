@@ -13,6 +13,10 @@ export const fallbackMembershipPlans = [
     amount: 5000,
     currency: 'INR',
     durationLabel: 'One-Time Payment',
+    numberPrefix: 'L',
+    number_prefix: 'L',
+    validityYears: null,
+    validity_years: null,
     sort_order: 10,
     is_active: true,
   },
@@ -25,6 +29,10 @@ export const fallbackMembershipPlans = [
     amount: 1500,
     currency: 'INR',
     durationLabel: 'Per 3 Years',
+    numberPrefix: 'L',
+    number_prefix: 'L',
+    validityYears: 3,
+    validity_years: 3,
     sort_order: 20,
     is_active: true,
   },
@@ -37,6 +45,10 @@ export const fallbackMembershipPlans = [
     amount: 200,
     currency: 'USD',
     durationLabel: 'Per 3 Years',
+    numberPrefix: 'OS',
+    number_prefix: 'OS',
+    validityYears: 3,
+    validity_years: 3,
     sort_order: 30,
     is_active: true,
   },
@@ -308,8 +320,10 @@ function preparePlanPayload(input, userId) {
     description: input.description?.trim() || null,
     amount,
     currency,
-    amount_label: input.amount_label?.trim() || formatAmountLabel(amount, currency),
+    amount_label: formatAmountLabel(amount, currency),
     duration_label: input.duration_label?.trim() || null,
+    number_prefix: normalizePrefix(input.number_prefix || input.numberPrefix),
+    validity_years: normalizeValidityYears(input.validity_years ?? input.validityYears),
     is_active: Boolean(input.is_active),
     sort_order: Number(input.sort_order) || 0,
     updated_by: userId || null,
@@ -342,6 +356,8 @@ function mapPlanRow(row) {
     amount: Number(row.amount),
     amountLabel: row.amount_label,
     durationLabel: row.duration_label || '',
+    numberPrefix: row.number_prefix || '',
+    validityYears: row.validity_years ?? null,
     is_active: row.is_active,
   };
 }
@@ -370,6 +386,18 @@ export function normalizeSlug(value = '') {
 
 function formatAmountLabel(amount, currency) {
   return `${new Intl.NumberFormat('en-IN').format(amount)} ${currency}`;
+}
+
+function normalizePrefix(value = '') {
+  const prefix = String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  return prefix || null;
+}
+
+function normalizeValidityYears(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const years = Number(value);
+  if (!Number.isInteger(years) || years <= 0) throw new Error('Validity years must be a whole number, or blank for lifetime.');
+  return years;
 }
 
 function safeFileName(name) {

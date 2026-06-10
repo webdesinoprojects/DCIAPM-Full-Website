@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
 import SEO from '../../components/SEO';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -31,16 +31,17 @@ const activeFilters = [
 
 const AdminMembers = () => {
   const { profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [members, setMembers] = useState([]);
   const [summary, setSummary] = useState({ all: 0, active: 0, inactive: 0, withEmail: 0 });
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => getInitialPage(searchParams));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState({ type: null, message: '' });
-  const [query, setQuery] = useState('');
-  const [emailFilter, setEmailFilter] = useState('all');
-  const [activeFilter, setActiveFilter] = useState('active');
+  const [query, setQuery] = useState(() => searchParams.get('q') || '');
+  const [emailFilter, setEmailFilter] = useState(() => getValidFilter(searchParams.get('email'), emailFilters, 'all'));
+  const [activeFilter, setActiveFilter] = useState(() => getValidFilter(searchParams.get('status'), activeFilters, 'active'));
   const [form, setForm] = useState(emptyMemberForm);
   const [editing, setEditing] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -76,10 +77,6 @@ const AdminMembers = () => {
   }, []);
 
   useEffect(() => {
-    setPage(1);
-  }, [activeFilter, debouncedQuery, emailFilter]);
-
-  useEffect(() => {
     setLoading(true);
     Promise.all([loadMembers(), loadSummary()]).catch((error) => {
       setStatus({ type: 'error', message: error.message || 'Unable to load member directory.' });
@@ -103,12 +100,43 @@ const AdminMembers = () => {
     };
   }, [loadMembers, loadSummary]);
 
+  useEffect(() => {
+    const nextPage = getInitialPage(searchParams);
+    const nextQuery = searchParams.get('q') || '';
+    const nextEmailFilter = getValidFilter(searchParams.get('email'), emailFilters, 'all');
+    const nextActiveFilter = getValidFilter(searchParams.get('status'), activeFilters, 'active');
+
+    setPage((current) => (current === nextPage ? current : nextPage));
+    setQuery((current) => (current === nextQuery ? current : nextQuery));
+    setEmailFilter((current) => (current === nextEmailFilter ? current : nextEmailFilter));
+    setActiveFilter((current) => (current === nextActiveFilter ? current : nextActiveFilter));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (page > 1) nextParams.set('page', String(page));
+    if (debouncedQuery.trim()) nextParams.set('q', debouncedQuery.trim());
+    if (emailFilter !== 'all') nextParams.set('email', emailFilter);
+    if (activeFilter !== 'active') nextParams.set('status', activeFilter);
+
+    if (nextParams.toString() !== searchParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [activeFilter, debouncedQuery, emailFilter, page, searchParams, setSearchParams]);
+
   const totalPages = Math.max(1, Math.ceil(total / MEMBER_DIRECTORY_PAGE_SIZE));
+  const paginationItems = useMemo(() => buildPaginationItems(page, totalPages), [page, totalPages]);
+  const pageStart = total === 0 ? 0 : ((page - 1) * MEMBER_DIRECTORY_PAGE_SIZE) + 1;
+  const pageEnd = Math.min(page * MEMBER_DIRECTORY_PAGE_SIZE, total);
 
   const visibleMembers = useMemo(() => members.map((member, index) => ({
     ...member,
     serialNo: (page - 1) * MEMBER_DIRECTORY_PAGE_SIZE + index + 1,
   })), [members, page]);
+
+  useEffect(() => {
+    if (!loading && page > totalPages) setPage(totalPages);
+  }, [loading, page, totalPages]);
 
   const updateField = (event) => {
     const { name, value, type, checked } = event.target;
@@ -231,15 +259,32 @@ const AdminMembers = () => {
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
                 <input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setPage(1);
+                    setQuery(event.target.value);
+                  }}
                   className="field-input member-search-input"
                   placeholder="Search name, email, hospital, reg no..."
                 />
               </label>
-              <select value={emailFilter} onChange={(event) => setEmailFilter(event.target.value)} className="field-input">
+              <select
+                value={emailFilter}
+                onChange={(event) => {
+                  setPage(1);
+                  setEmailFilter(event.target.value);
+                }}
+                className="field-input"
+              >
                 {emailFilters.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
               </select>
-              <select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="field-input">
+              <select
+                value={activeFilter}
+                onChange={(event) => {
+                  setPage(1);
+                  setActiveFilter(event.target.value);
+                }}
+                className="field-input"
+              >
                 {activeFilters.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
               </select>
             </div>
@@ -339,16 +384,47 @@ const AdminMembers = () => {
               )}
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-gray-500">Page {page} of {totalPages}</p>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setPage((current) => Math.max(current - 1, 1))} disabled={page <= 1 || loading} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-gray-50 disabled:opacity-50">
-                  Previous
-                </button>
-                <button type="button" onClick={() => setPage((current) => Math.min(current + 1, totalPages))} disabled={page >= totalPages || loading} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-blue-900 disabled:opacity-50">
-                  Next
-                </button>
-              </div>
+            <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+              <p className="text-sm font-semibold text-gray-500">
+                Showing {pageStart}-{pageEnd} of {total} records
+              </p>
+              <nav className="max-w-full overflow-x-auto pb-1" aria-label="Member directory pagination">
+                <div className="flex w-max min-w-full items-center gap-1 sm:min-w-0">
+                  <PaginationButton
+                    label="Previous page"
+                    disabled={page <= 1 || loading}
+                    onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                  >
+                    <span className="material-icons-outlined text-base">chevron_left</span>
+                  </PaginationButton>
+
+                  {paginationItems.map((item, index) => (
+                    item === 'ellipsis' ? (
+                      <span key={`ellipsis-${index}`} className="grid h-9 min-w-9 place-items-center rounded-lg px-2 text-sm font-bold text-gray-400">
+                        ...
+                      </span>
+                    ) : (
+                      <PaginationButton
+                        key={item}
+                        label={`Page ${item}`}
+                        active={item === page}
+                        disabled={loading}
+                        onClick={() => setPage(item)}
+                      >
+                        {item}
+                      </PaginationButton>
+                    )
+                  ))}
+
+                  <PaginationButton
+                    label="Next page"
+                    disabled={page >= totalPages || loading}
+                    onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+                  >
+                    <span className="material-icons-outlined text-base">chevron_right</span>
+                  </PaginationButton>
+                </div>
+              </nav>
             </div>
           </div>
         </section>
@@ -487,6 +563,23 @@ const MobileSkeleton = () => (
   </div>
 );
 
+const PaginationButton = ({ children, label, active = false, disabled = false, onClick }) => (
+  <button
+    type="button"
+    aria-label={label}
+    aria-current={active ? 'page' : undefined}
+    disabled={disabled}
+    onClick={onClick}
+    className={`grid h-9 min-w-9 place-items-center rounded-lg px-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      active
+        ? 'bg-primary text-white shadow-sm'
+        : 'border border-gray-200 bg-white text-primary hover:bg-gray-50'
+    }`}
+  >
+    {children}
+  </button>
+);
+
 const AdminMemberStyles = () => (
   <style>{`
     .field-label { display: block; margin-bottom: 0.4rem; font-size: 0.875rem; font-weight: 700; color: #334155; }
@@ -515,6 +608,41 @@ function confirmBody(confirm) {
   if (confirm.mode === 'delete') return `This will permanently remove ${name} from the member directory.`;
   if (confirm.mode === 'activate') return `${name} will become visible in the public member directory.`;
   return `${name} will be hidden from the public member directory but kept in admin records.`;
+}
+
+function buildPaginationItems(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages, currentPage]);
+
+  if (currentPage <= 4) {
+    [2, 3, 4, 5].forEach((pageNumber) => pages.add(pageNumber));
+  } else if (currentPage >= totalPages - 3) {
+    [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1].forEach((pageNumber) => pages.add(pageNumber));
+  } else {
+    [currentPage - 1, currentPage + 1].forEach((pageNumber) => pages.add(pageNumber));
+  }
+
+  const sorted = Array.from(pages)
+    .filter((pageNumber) => pageNumber >= 1 && pageNumber <= totalPages)
+    .sort((a, b) => a - b);
+
+  return sorted.flatMap((pageNumber, index) => {
+    const previous = sorted[index - 1];
+    if (!previous || pageNumber - previous === 1) return [pageNumber];
+    return ['ellipsis', pageNumber];
+  });
+}
+
+function getInitialPage(searchParams) {
+  const pageNumber = Number(searchParams.get('page'));
+  return Number.isFinite(pageNumber) && pageNumber > 0 ? Math.floor(pageNumber) : 1;
+}
+
+function getValidFilter(value, options, fallback) {
+  return options.some((option) => option.value === value) ? value : fallback;
 }
 
 function useDebouncedValue(value, delay) {

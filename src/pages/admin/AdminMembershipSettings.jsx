@@ -33,6 +33,8 @@ const emptyPlanForm = {
   currency: 'INR',
   amount_label: '',
   duration_label: '',
+  number_prefix: '',
+  validity_years: '',
   is_active: true,
   sort_order: 0,
 };
@@ -105,7 +107,7 @@ const AdminMembershipSettings = () => {
     const { name, type, checked, value } = event.target;
     setPlanForm((current) => ({
       ...current,
-      [name]: name === 'slug' ? normalizeSlug(value) : type === 'checkbox' ? checked : value,
+      [name]: normalizePlanField(name, type === 'checkbox' ? checked : value),
       ...(!editingPlanId && name === 'label' ? { slug: normalizeSlug(value) } : {}),
     }));
   };
@@ -156,6 +158,8 @@ const AdminMembershipSettings = () => {
       currency: plan.currency || 'INR',
       amount_label: plan.amount_label || plan.amountLabel || '',
       duration_label: plan.duration_label || plan.durationLabel || '',
+      number_prefix: plan.number_prefix || plan.numberPrefix || '',
+      validity_years: plan.validity_years ?? plan.validityYears ?? '',
       is_active: plan.is_active,
       sort_order: plan.sort_order || 0,
     });
@@ -245,6 +249,8 @@ const AdminMembershipSettings = () => {
       setStatus({ type: 'error', message: friendlyError(error.message, pendingDelete.kind) });
     }
   };
+
+  const computedPlanAmountLabel = formatPlanAmountLabel(planForm.amount, planForm.currency);
 
   return (
     <AdminShell title="Membership Form" description="Edit the public join-membership page, payment QR, membership types, and categories.">
@@ -394,10 +400,21 @@ const AdminMembershipSettings = () => {
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <Field label="Amount label">
-                      <input name="amount_label" value={planForm.amount_label} onChange={updatePlanField} maxLength="80" className="field-input" placeholder="Auto: 5,000 INR" />
+                      <input value={computedPlanAmountLabel} readOnly className="field-input bg-gray-100 font-semibold text-gray-700" placeholder="Auto: 5,000 INR" />
+                      <p className="mt-1 text-xs text-gray-500">Generated from amount and currency.</p>
                     </Field>
                     <Field label="Duration label">
                       <input name="duration_label" value={planForm.duration_label || ''} onChange={updatePlanField} maxLength="100" className="field-input" placeholder="Per 3 Years" />
+                    </Field>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Number prefix">
+                      <input name="number_prefix" value={planForm.number_prefix || ''} onChange={updatePlanField} maxLength="8" className="field-input uppercase" placeholder="L, AH, OS" />
+                      <p className="mt-1 text-xs text-gray-500">Used when admin leaves membership number blank.</p>
+                    </Field>
+                    <Field label="Validity years">
+                      <input type="number" min="1" step="1" name="validity_years" value={planForm.validity_years ?? ''} onChange={updatePlanField} className="field-input" placeholder="Blank for lifetime" />
+                      <p className="mt-1 text-xs text-gray-500">Blank means no expiry date.</p>
                     </Field>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -426,6 +443,9 @@ const AdminMembershipSettings = () => {
                         </div>
                         <p className="mt-2 font-bold text-primary">{plan.label}</p>
                         <p className="text-sm font-semibold text-gray-700">{plan.amountLabel || plan.amount_label}</p>
+                        <p className="mt-1 text-xs font-semibold text-gray-500">
+                          Prefix: {plan.numberPrefix || plan.number_prefix || 'Auto'} · Validity: {plan.validityYears || plan.validity_years ? `${plan.validityYears || plan.validity_years} years` : 'Lifetime'}
+                        </p>
                         {plan.description && <p className="mt-1 text-sm text-gray-500">{plan.description}</p>}
                       </div>
                       <div className="flex shrink-0 gap-2">
@@ -528,6 +548,18 @@ function friendlyError(message = '', kind = 'item') {
   if (normalized.includes('qr image') || normalized.includes('jpg') || normalized.includes('png') || normalized.includes('webp')) return message;
   if (normalized.includes('storage') || normalized.includes('bucket')) return 'QR upload failed. Use a JPG, PNG, or WebP image under 2 MB.';
   return message || `The ${kind} could not be saved.`;
+}
+
+function normalizePlanField(name, value) {
+  if (name === 'slug') return normalizeSlug(value);
+  if (name === 'number_prefix') return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  return value;
+}
+
+function formatPlanAmountLabel(amount, currency) {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) return '';
+  return `${new Intl.NumberFormat('en-IN').format(numericAmount)} ${currency === 'USD' ? 'USD' : 'INR'}`;
 }
 
 export default AdminMembershipSettings;
