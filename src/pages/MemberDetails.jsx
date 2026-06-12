@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
+import EventTicker from '../components/sections/EventTicker';
 import { listPublicMemberDirectory, MEMBER_DIRECTORY_PAGE_SIZE } from '../lib/memberDirectory';
 
 const EMAIL_TABS = [
@@ -78,7 +79,7 @@ const MembersDetails = () => {
         <div className="container mx-auto px-4 text-center">
           <h1 className="mb-2 font-display text-3xl font-bold md:text-4xl">Member Directory</h1>
           <p className="mx-auto max-w-3xl text-sm opacity-90 md:text-base">
-            Search verified DC-IAPM member records by name, email, hospital or registration number.
+            Search verified DC-IAPM member records by name, email, phone, hospital or registration number.
           </p>
         </div>
       </section>
@@ -88,11 +89,11 @@ const MembersDetails = () => {
           <div className="grid items-end gap-4 md:grid-cols-12">
             <div className="md:col-span-8">
               <label className="ml-1 mb-2 block text-xs font-bold uppercase text-gray-500">
-                Search by name, email, hospital, or registration number
+                Search by name, email, phone, hospital, or registration number
               </label>
               <input
                 type="text"
-                placeholder="Type name, email, hospital, or registration number"
+                placeholder="Type name, email, phone, hospital, or registration number"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 className="h-[56px] w-full rounded-lg border border-gray-300 bg-gray-50 px-4 font-medium text-gray-700 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary"
@@ -128,6 +129,10 @@ const MembersDetails = () => {
           </div>
         </div>
 
+        <div className="mb-8 overflow-hidden rounded-xl shadow-lg">
+          <EventTicker />
+        </div>
+
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
             <h3 className="font-bold text-gray-700">Directory Records</h3>
@@ -150,6 +155,8 @@ const MembersDetails = () => {
                   <th className="border-b px-6 py-4">Member Name</th>
                   <th className="border-b px-6 py-4">Hospital</th>
                   <th className="border-b px-6 py-4">Registration Number</th>
+                  <th className="border-b px-6 py-4">Email</th>
+                  <th className="border-b px-6 py-4">Phone</th>
                 </tr>
               </thead>
 
@@ -161,6 +168,8 @@ const MembersDetails = () => {
                       <td className="px-6 py-4"><div className="h-4 w-40 rounded bg-gray-200" /></td>
                       <td className="px-6 py-4"><div className="h-4 w-36 rounded bg-gray-200" /></td>
                       <td className="px-6 py-4"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                      <td className="px-6 py-4"><div className="h-4 w-36 rounded bg-gray-200" /></td>
+                      <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                     </tr>
                   ))
                 ) : pageRows.length > 0 ? (
@@ -170,11 +179,13 @@ const MembersDetails = () => {
                       <td className="px-6 py-4 font-semibold text-gray-800">{member.member_name}</td>
                       <td className="px-6 py-4 text-gray-700">{member.hospital || '-'}</td>
                       <td className="px-6 py-4 font-mono text-gray-700">{member.registration_number}</td>
+                      <td className="px-6 py-4 font-mono text-gray-700">{member.masked_email || '-'}</td>
+                      <td className="px-6 py-4 font-mono text-gray-700">{member.masked_mobile || '-'}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                       No matching members found.
                     </td>
                   </tr>
@@ -198,6 +209,10 @@ const MembersDetails = () => {
                   <p className="mb-1 font-mono text-xs text-gray-500">{member.registration_number}</p>
                   <h4 className="text-lg font-bold text-gray-900">{member.member_name}</h4>
                   <p className="mt-1 text-sm text-gray-600">Hospital: {member.hospital || '-'}</p>
+                  <div className="mt-3 grid gap-1 rounded-lg bg-gray-50 p-3 text-xs font-semibold text-gray-600">
+                    <p>Email: <span className="font-mono text-gray-800">{member.masked_email || '-'}</span></p>
+                    <p>Phone: <span className="font-mono text-gray-800">{member.masked_mobile || '-'}</span></p>
+                  </div>
                   {member.membership_status && (
                     <p className="mt-2 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                       {member.membership_status}

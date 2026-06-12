@@ -21,14 +21,23 @@ export async function listPublicMemberDirectory({
   page = 1,
   pageSize = MEMBER_DIRECTORY_PAGE_SIZE,
 } = {}) {
-  return listMemberDirectory({
-    admin: false,
-    search,
-    emailFilter,
-    activeFilter: 'active',
-    page,
-    pageSize,
+  if (!isSupabaseConfigured) return { rows: [], count: 0 };
+
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safePageSize = Math.min(Math.max(Number(pageSize) || MEMBER_DIRECTORY_PAGE_SIZE, 10), 200);
+  const { data, error } = await supabase.rpc('search_public_member_directory', {
+    p_search: String(search || '').trim(),
+    p_email_filter: normalizeEmailFilter(emailFilter),
+    p_page: safePage,
+    p_page_size: safePageSize,
   });
+
+  if (error) throwMemberDirectoryError(error);
+  const rows = data || [];
+  return {
+    rows,
+    count: rows[0]?.total_count || 0,
+  };
 }
 
 export async function listAdminMemberDirectory({
@@ -197,6 +206,10 @@ function buildSearchFilter(value) {
     `address.ilike.${pattern}`,
     `membership_status.ilike.${pattern}`,
   ].join(',');
+}
+
+function normalizeEmailFilter(value) {
+  return ['with_email', 'without_email'].includes(value) ? value : 'all';
 }
 
 function emptyToNull(value) {

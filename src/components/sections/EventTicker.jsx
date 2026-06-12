@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { listTickerUpdates } from '../../lib/ticker';
 import { logDevError } from '../../lib/logger';
 
 const fallbackUpdates = [
-    { id: 'fallback-welcome', title: 'Welcome to DC-IAPM — Delhi Chapter of the Indian Association of Pathologists and Microbiologists.' },
+    { id: 'fallback-welcome', title: 'Welcome to DC-IAPM - Delhi Chapter of the Indian Association of Pathologists and Microbiologists.' },
 ];
 
 const EventTicker = () => {
     const [updates, setUpdates] = useState([]);
     const [loaded, setLoaded] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const shouldReduceMotion = useReducedMotion();
 
     useEffect(() => {
         let cancelled = false;
@@ -46,11 +48,21 @@ const EventTicker = () => {
         };
     }, []);
 
+    useEffect(() => {
+        const updateViewport = () => setIsMobile(window.matchMedia('(max-width: 767px)').matches);
+        updateViewport();
+        window.addEventListener('resize', updateViewport);
+        return () => window.removeEventListener('resize', updateViewport);
+    }, []);
+
     const displayUpdates = loaded && updates.length > 0 ? updates : fallbackUpdates;
     const duplicatedUpdates = [...displayUpdates, ...displayUpdates, ...displayUpdates];
+    const tickerDuration = isMobile
+        ? Math.max(duplicatedUpdates.length * 24, 96)
+        : Math.max(duplicatedUpdates.length * 16, 58);
 
     return (
-        <div className="bg-primary border-b-8 border-gold-DEFAULT text-primary overflow-hidden py-4 relative z-30 shadow-xl">
+        <div className="bg-primary border-b-8 border-gold-DEFAULT text-primary overflow-hidden py-3 md:py-4 relative z-30 shadow-xl">
             <div className="container mx-auto px-4 flex items-center relative">
 
                 <div className="hidden md:flex items-center gap-2 bg-[#D4AF37] shadow-md z-10 flex-shrink-0 font-semibold px-4 py-2 rounded">
@@ -61,11 +73,11 @@ const EventTicker = () => {
                 <div className="flex-grow overflow-hidden relative mask-linear-fade">
                     <motion.div
                         className="flex items-center gap-16 whitespace-nowrap"
-                        animate={{ x: ["0%", "-33.33%"] }}
+                        animate={shouldReduceMotion ? { x: 0 } : { x: ["0%", "-33.33%"] }}
                         transition={{
-                            duration: Math.max(duplicatedUpdates.length * 16, 58),
+                            duration: tickerDuration,
                             ease: "linear",
-                            repeat: Infinity,
+                            repeat: shouldReduceMotion ? 0 : Infinity,
                         }}
                         whileHover={{ animationPlayState: 'paused' }}
                         style={{ width: "fit-content" }}
