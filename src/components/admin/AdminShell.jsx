@@ -24,6 +24,7 @@ const navGroups = [
       { label: 'Membership Apps', to: '/admin/membership', icon: 'card_membership' },
       { label: 'Membership Form', to: '/admin/membership-settings', icon: 'edit_note' },
       { label: 'Members', to: '/admin/members', icon: 'groups' },
+      { label: 'Directory Notice', to: '/admin/member-directory-notice', icon: 'campaign' },
       { label: 'Voter Details', to: '/admin/voters', icon: 'how_to_reg' },
       { label: 'Events', to: '/admin/events', icon: 'event' },
       { label: 'Latest Updates', to: '/admin/ticker-updates', icon: 'campaign' },

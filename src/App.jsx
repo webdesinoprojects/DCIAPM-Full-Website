@@ -43,6 +43,7 @@ import AdminMembershipApplicationDetail from './pages/admin/AdminMembershipAppli
 import AdminMembershipSettings from './pages/admin/AdminMembershipSettings';
 import AdminMembers from './pages/admin/AdminMembers';
 import AdminMemberDetail from './pages/admin/AdminMemberDetail';
+import AdminMemberDirectoryNotice from './pages/admin/AdminMemberDirectoryNotice';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminMessageDetail from './pages/admin/AdminMessageDetail';
 import AdminTickerUpdates from './pages/admin/AdminTickerUpdates';
@@ -224,6 +225,14 @@ function App() {
             element={(
               <ProtectedRoute requireAdmin>
                 <AdminMembers />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/member-directory-notice"
+            element={(
+              <ProtectedRoute requireAdmin>
+                <AdminMemberDirectoryNotice />
               </ProtectedRoute>
             )}
           />

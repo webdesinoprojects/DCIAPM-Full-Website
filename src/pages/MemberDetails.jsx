@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
-import EventTicker from '../components/sections/EventTicker';
 import { listPublicMemberDirectory, MEMBER_DIRECTORY_PAGE_SIZE } from '../lib/memberDirectory';
+import { getPublicMemberDirectoryNotice } from '../lib/memberDirectoryNotice';
 
 const EMAIL_TABS = [
   { id: 'all', label: 'All Members' },
@@ -18,11 +18,28 @@ const MembersDetails = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [emailTab, setEmailTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [notice, setNotice] = useState(null);
   const debouncedQuery = useDebouncedValue(searchQuery, 300);
 
   useEffect(() => {
     setPage(1);
   }, [debouncedQuery, emailTab]);
+
+  useEffect(() => {
+    let active = true;
+
+    getPublicMemberDirectoryNotice()
+      .then((row) => {
+        if (active) setNotice(row);
+      })
+      .catch(() => {
+        if (active) setNotice(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -129,9 +146,7 @@ const MembersDetails = () => {
           </div>
         </div>
 
-        <div className="mb-8 overflow-hidden rounded-xl shadow-lg">
-          <EventTicker />
-        </div>
+        {notice && <MemberDirectoryNotice notice={notice} />}
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
@@ -251,6 +266,37 @@ const MembersDetails = () => {
     </motion.main>
   );
 };
+
+function MemberDirectoryNotice({ notice }) {
+  const linkUrl = notice.link_url || '';
+  const isExternal = /^https?:\/\//i.test(linkUrl) || /^mailto:/i.test(linkUrl);
+
+  return (
+    <div className="mb-8 overflow-hidden rounded-xl border border-gold-DEFAULT/30 bg-primary text-white shadow-lg">
+      <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-gold-light">
+            <span className="material-symbols-outlined text-lg">campaign</span>
+            Member Directory Notice
+          </p>
+          <h2 className="mt-2 text-lg font-bold md:text-xl">{notice.title}</h2>
+          <p className="mt-1 text-sm leading-6 text-white/85">{notice.message}</p>
+        </div>
+
+        {notice.link_label && linkUrl && (
+          <a
+            href={linkUrl}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noopener noreferrer' : undefined}
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-gold-DEFAULT px-4 py-2 text-sm font-bold text-primary hover:bg-yellow-500"
+          >
+            {notice.link_label}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function useDebouncedValue(value, delay) {
   const [debounced, setDebounced] = useState(value);
