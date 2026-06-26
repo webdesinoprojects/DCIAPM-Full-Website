@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
 import SEO from '../../components/SEO';
@@ -6,6 +6,7 @@ import CandidateAvatar from '../../components/elections/CandidateAvatar';
 import ElectionStatusPill from '../../components/elections/ElectionStatusPill';
 import {
   countActiveVoters,
+  electionRuntimeStatus,
   formatDateTime,
   getElectionWithCandidates,
   listElectionVotes,
@@ -27,7 +28,7 @@ const AdminVoteMonitor = () => {
     const rows = await listElections({ admin: true });
     const selected = electionSlug
       ? await getElectionWithCandidates(electionSlug)
-      : rows.find((row) => row.status === 'active') || rows[0] || null;
+      : rows.find((row) => electionRuntimeStatus(row) === 'active') || rows[0] || null;
 
     const voteRows = selected ? await listElectionVotes(selected.id) : [];
     const voters = await countActiveVoters();
@@ -181,7 +182,7 @@ const StandingRow = ({ stat, rank, totalVotes }) => (
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-bold text-primary">{stat.candidate.full_name}</p>
-          <p className="text-sm font-bold text-gray-700">{stat.voteCount} votes · {stat.percent}%</p>
+          <p className="text-sm font-bold text-gray-700">{stat.voteCount} votes Â· {stat.percent}%</p>
         </div>
         <div className="mt-3 h-2 rounded-full bg-gray-200">
           <div className="h-2 rounded-full bg-primary" style={{ width: `${totalVotes ? stat.percent : 0}%` }} />
@@ -219,3 +220,4 @@ const EmptyPanel = ({ title, text }) => (
 );
 
 export default AdminVoteMonitor;
+

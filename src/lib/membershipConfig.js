@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase } from './supabase';
+﻿import { isSupabaseConfigured, supabase } from './supabase';
 import { logDevWarn } from './logger';
 
 const MEMBERSHIP_BUCKET = 'membership-assets';
@@ -29,8 +29,8 @@ export const fallbackMembershipPlans = [
     amount: 1500,
     currency: 'INR',
     durationLabel: 'Per 3 Years',
-    numberPrefix: 'L',
-    number_prefix: 'L',
+    numberPrefix: 'AH',
+    number_prefix: 'AH',
     validityYears: 3,
     validity_years: 3,
     sort_order: 20,
@@ -45,8 +45,8 @@ export const fallbackMembershipPlans = [
     amount: 200,
     currency: 'USD',
     durationLabel: 'Per 3 Years',
-    numberPrefix: 'OS',
-    number_prefix: 'OS',
+    numberPrefix: 'O',
+    number_prefix: 'O',
     validityYears: 3,
     validity_years: 3,
     sort_order: 30,
@@ -83,11 +83,9 @@ export const fallbackPortalSettings = {
 
 ## Membership numbering rule
 
-Until 31 Dec 2026, Rs 1,500 promotional payments receive an L-series number.
+Promotional Life Membership receives an **L-series** number. Regular Ad Hoc applications receive **AH-series**, Overseas applications receive **O-series**, and Life applications receive **L-series** numbers.
 
-From 1 Jan 2027, Rs 5,000 Life members receive L-series, Rs 1,500 Ad Hoc members receive AH-series, and USD 200 Overseas members receive OS-series numbers.
-
-Please select the appropriate membership type in the application form and complete the payment before the deadline.`,
+Please select the exact membership type in the application form and complete the payment before the deadline.`,
 };
 
 export async function loadMembershipPortalData({ admin = false } = {}) {
@@ -407,3 +405,4 @@ function safeFileName(name) {
     .replace(/^-+|-+$/g, '')
     || `upload-${Date.now()}`;
 }
+

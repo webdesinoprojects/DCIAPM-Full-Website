@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CandidateAvatar from '../components/elections/CandidateAvatar';
@@ -90,7 +90,7 @@ const ElectionDetail = () => {
             </div>
             <div className="max-w-full overflow-hidden rounded-lg border border-gray-200 bg-[#fbfcfe] px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Your vote</p>
-              <p className="safe-wrap mt-1 font-bold text-primary">{vote?.candidate?.full_name || 'Not recorded yet'}</p>
+              <p className="safe-wrap mt-1 font-bold text-primary">{vote?.all?.length ? `${vote.all.length} vote${vote.all.length === 1 ? '' : 's'} recorded` : 'Not recorded yet'}</p>
             </div>
           </div>
         </div>
@@ -124,8 +124,8 @@ const ElectionDetail = () => {
                 key={candidate.id}
                 election={election}
                 candidate={candidate}
-                selected={vote?.candidate_id === candidate.id}
-                voteState={voteState}
+                selected={Boolean(vote?.byCandidate?.[candidate.id])}
+                voteState={canVoteInElection(election, profile, vote, candidate)}
               />
             ))}
           </div>
@@ -237,3 +237,4 @@ const PageState = ({ icon = 'progress_activity', title = 'Loading', text }) => (
 );
 
 export default ElectionDetail;
+

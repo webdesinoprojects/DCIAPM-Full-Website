@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
 import SEO from '../../components/SEO';
@@ -38,7 +38,9 @@ const AdminOverview = () => {
   }, [loadOverview]);
 
   const totals = useMemo(() => {
-    const totalVotes = Object.values(voteMap).reduce((sum, votes) => sum + votes.length, 0);
+    const allVotes = Object.values(voteMap).flat();
+    const totalVotes = allVotes.length;
+    const participatingVoters = new Set(allVotes.map((vote) => vote.voter_id).filter(Boolean)).size;
     const activeElectionCount = elections.filter((election) => electionRuntimeStatus(election) === 'active').length;
     const nomineeCount = elections.reduce((sum, election) => sum + election.candidates.length, 0);
     const publishedCount = elections.filter((election) => election.status !== 'draft').length;
@@ -48,7 +50,7 @@ const AdminOverview = () => {
       activeElectionCount,
       nomineeCount,
       publishedCount,
-      turnout: activeVoters ? Math.round((totalVotes / activeVoters) * 100) : 0,
+      turnout: activeVoters ? Math.round((participatingVoters / activeVoters) * 100) : 0,
     };
   }, [activeVoters, elections, voteMap]);
 
@@ -227,3 +229,4 @@ const EmptyLine = ({ text }) => (
 );
 
 export default AdminOverview;
+

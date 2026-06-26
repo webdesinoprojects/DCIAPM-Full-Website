@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
 import SEO from '../../components/SEO';
@@ -18,7 +18,7 @@ const AdminMembershipApplications = () => {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState({ type: null, message: '' });
   const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('needs_review');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [deleting, setDeleting] = useState(null);
 
@@ -196,3 +196,4 @@ const AdminMembershipApplications = () => {
 };
 
 export default AdminMembershipApplications;
+

@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
 import SEO from '../../components/SEO';
 import ElectionStatusPill from '../../components/elections/ElectionStatusPill';
 import {
   countActiveVoters,
+  electionRuntimeStatus,
   formatDateTime,
   getElectionWithCandidates,
   listElectionVotes,
@@ -25,7 +26,7 @@ const AdminTurnout = () => {
     const rows = await listElections({ admin: true });
     const selected = electionSlug
       ? await getElectionWithCandidates(electionSlug)
-      : rows.find((row) => row.status === 'active') || rows[0] || null;
+      : rows.find((row) => electionRuntimeStatus(row) === 'active') || rows[0] || null;
     const voteRows = selected ? await listElectionVotes(selected.id) : [];
     const voters = await countActiveVoters();
 
@@ -177,3 +178,4 @@ const EmptyPanel = ({ title, text }) => (
 );
 
 export default AdminTurnout;
+

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CandidateAvatar from '../components/elections/CandidateAvatar';
@@ -80,8 +80,8 @@ const CandidateVote = () => {
     });
   }, [election, loadVotePage, user]);
 
-  const voteState = useMemo(() => canVoteInElection(election, profile, vote), [election, profile, vote]);
-  const votedForThisCandidate = vote?.candidate_id === candidate?.id;
+  const voteState = useMemo(() => canVoteInElection(election, profile, vote, candidate), [candidate, election, profile, vote]);
+  const votedForThisCandidate = Boolean(voteState.candidateVote);
 
   const submitVote = async () => {
     if (!voteState.allowed || !confirmed || submitting) return;
@@ -209,25 +209,27 @@ const CandidateVote = () => {
         <aside className="max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-DEFAULT">Vote Confirmation</p>
           <h2 className="safe-wrap mt-3 text-2xl font-bold text-primary">
-            {votedForThisCandidate ? 'Vote recorded' : vote ? 'Already voted' : 'Cast your vote'}
+            {votedForThisCandidate ? 'Vote recorded' : voteState.positionLimitReached ? 'Post limit reached' : 'Cast your vote'}
           </h2>
 
-          {vote ? (
+          {(votedForThisCandidate || voteState.positionLimitReached) ? (
             <div className="mt-5 rounded-lg border border-green-100 bg-green-50 p-4 text-green-800">
               <p className="font-bold">
                 {votedForThisCandidate
                   ? 'Your vote is recorded for this nominee.'
-                  : `Your vote is recorded for ${vote.candidate?.full_name || 'another nominee'}.`}
+                  : voteState.reason}
               </p>
               <p className="mt-1 text-sm">
-                No further action is needed. You can safely leave this page.
+                {votedForThisCandidate
+                  ? 'No further action is needed. You can safely leave this page.'
+                  : 'Open another post if you still have voting rights there.'}
               </p>
             </div>
           ) : (
             <>
               <div className="mt-5 rounded-lg border border-gray-100 bg-[#fbfcfe] p-4">
                 <p className="text-sm leading-6 text-gray-700">
-                  This action can be submitted only once for this election. Please review the nominee details before confirming.
+                  This action follows the vote limit for this post. Please review the nominee details before confirming.
                 </p>
               </div>
 
@@ -306,3 +308,4 @@ const PageState = ({ icon = 'progress_activity', title = 'Loading', text }) => (
 );
 
 export default CandidateVote;
+

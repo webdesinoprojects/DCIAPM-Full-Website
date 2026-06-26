@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, publicSupabase, supabase } from './supabase';
+﻿import { isSupabaseConfigured, publicSupabase, supabase } from './supabase';
 import { logDevWarn } from './logger';
 import {
   fallbackMembershipPlans,
@@ -195,13 +195,35 @@ export async function getMembershipApplication(id) {
 }
 
 export async function updateMembershipApplication(id, input) {
-  await assertMembershipNumberAvailable(id, input.membership_number);
-  const payload = {
-    status: input.status,
-    admin_notes: input.admin_notes || null,
-    membership_number: input.membership_number || null,
-    bill_number: input.bill_number || null,
-  };
+  const nextStatus = input.status || 'submitted';
+  if (nextStatus !== 'rejected') {
+    await assertMembershipNumberAvailable(id, input.membership_number);
+  }
+
+  const payload = nextStatus === 'rejected'
+    ? {
+        status: 'rejected',
+        admin_notes: input.admin_notes || null,
+        membership_number: null,
+        bill_number: null,
+        receipt_url: null,
+        receipt_path: null,
+        receipt_file_name: null,
+        receipt_mime_type: null,
+        certificate_url: null,
+        certificate_path: null,
+        certificate_file_name: null,
+        certificate_mime_type: null,
+        last_email_status: 'not_sent',
+        last_email_error: null,
+      }
+    : {
+        status: nextStatus,
+        admin_notes: input.admin_notes || null,
+        membership_number: input.membership_number || null,
+        bill_number: input.bill_number || null,
+      };
+
   const { data, error } = await supabase
     .from('membership_applications')
     .update(payload)
@@ -407,3 +429,4 @@ function friendlyMembershipError(error = '') {
   }
   return message || 'Application could not be submitted. Please try again.';
 }
+

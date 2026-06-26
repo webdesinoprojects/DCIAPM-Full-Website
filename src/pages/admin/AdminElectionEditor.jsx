@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AdminShell from '../../components/admin/AdminShell';
 import SEO from '../../components/SEO';
@@ -6,11 +6,13 @@ import ElectionStatusPill from '../../components/elections/ElectionStatusPill';
 import { useAuth } from '../../hooks/useAuth';
 import {
   createElection,
+  defaultElectionVoteLimits,
   electionStatuses,
   formatDateTime,
   getElectionWithCandidates,
   toDateTimeLocal,
   updateElection,
+  updateElectionVoteLimits,
 } from '../../lib/elections';
 
 const blankForm = {
@@ -28,6 +30,7 @@ const AdminElectionEditor = () => {
   const isNew = !electionSlug;
   const [election, setElection] = useState(null);
   const [form, setForm] = useState(blankForm);
+  const [voteLimits, setVoteLimits] = useState(defaultElectionVoteLimits);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState({ type: null, message: '' });
@@ -49,6 +52,7 @@ const AdminElectionEditor = () => {
       starts_at: toDateTimeLocal(row.starts_at),
       ends_at: toDateTimeLocal(row.ends_at),
     });
+    setVoteLimits(mergeVoteLimits(row.vote_limits));
     setLoading(false);
   }, [electionSlug, isNew]);
 
@@ -62,6 +66,13 @@ const AdminElectionEditor = () => {
   const updateField = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const updateVoteLimit = (positionKey, value) => {
+    const nextValue = Math.min(15, Math.max(1, Number(value || 1)));
+    setVoteLimits((current) => current.map((limit) => (
+      limit.position_key === positionKey ? { ...limit, max_votes: nextValue } : limit
+    )));
   };
 
   const saveElection = async (event) => {
@@ -79,6 +90,8 @@ const AdminElectionEditor = () => {
       const saved = isNew
         ? await createElection(form, user.id)
         : await updateElection(election.id, form);
+
+      await updateElectionVoteLimits(saved.id, voteLimits);
 
       setStatus({ type: 'success', message: isNew ? 'Election created.' : 'Election updated.' });
       if (isNew) {
@@ -161,7 +174,29 @@ const AdminElectionEditor = () => {
                   <input type="datetime-local" name="ends_at" value={form.ends_at} onChange={updateField} className="field-input" />
                 </label>
               </div>
-
+              <div className="rounded-lg border border-gray-100 bg-[#fbfcfe] p-4">
+                <p className="text-sm font-bold text-primary">Voting rights by post</p>
+                <p className="mt-1 text-xs font-semibold text-gray-500">Office bearer posts stay at one vote. Set EC Member voting rights from 1 to 15.</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {voteLimits.map((limit) => {
+                    const locked = limit.position_key !== 'ec_member';
+                    return (
+                      <label key={limit.position_key} className="block rounded-lg border border-gray-200 bg-white p-3">
+                        <span className="field-label">{limit.position_label}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="15"
+                          value={limit.max_votes}
+                          onChange={(event) => updateVoteLimit(limit.position_key, event.target.value)}
+                          readOnly={locked}
+                          className={`field-input ${locked ? 'bg-gray-100 text-gray-500' : ''}`}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               <StatusMessage status={status} />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -246,4 +281,17 @@ function friendlyElectionError(message = '') {
   return 'Election could not be saved. Please check the form and try again.';
 }
 
+function mergeVoteLimits(limits = []) {
+  const map = new Map(defaultElectionVoteLimits.map((limit) => [limit.position_key, { ...limit }]));
+  limits.forEach((limit) => {
+    map.set(limit.position_key, {
+      ...map.get(limit.position_key),
+      ...limit,
+      max_votes: Math.min(15, Math.max(1, Number(limit.max_votes || 1))),
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => (a.sort_order - b.sort_order) || a.position_label.localeCompare(b.position_label));
+}
+
 export default AdminElectionEditor;
+

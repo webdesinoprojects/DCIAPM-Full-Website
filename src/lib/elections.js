@@ -1,11 +1,12 @@
-import { isSupabaseConfigured, supabase } from './supabase';
+﻿import { isSupabaseConfigured, supabase } from './supabase';
 import { uploadContentFile } from './contentUpload';
 
 export const electionStatuses = ['draft', 'scheduled', 'active', 'closed', 'archived'];
 
 export const voteMessages = {
   VOTE_RECORDED: 'Your vote has been recorded.',
-  ALREADY_VOTED: 'You have already voted in this election.',
+  ALREADY_VOTED: 'You have already voted for this nominee.',
+  POSITION_VOTE_LIMIT_REACHED: 'You have already used the allowed votes for this post.',
   AUTH_REQUIRED: 'Please log in before voting.',
   PROFILE_NOT_ALLOWED: 'This account is not eligible to vote.',
   PROFILE_INCOMPLETE: 'Complete your voter profile with name, registration number and photo before voting.',
@@ -30,34 +31,98 @@ export function normalizeRegistrationNo(value) {
   return String(value || '').trim().replace(/\s+/g, '').toUpperCase();
 }
 
+export const defaultElectionVoteLimits = [
+  { position_key: 'president', position_label: 'President', max_votes: 1, sort_order: 10 },
+  { position_key: 'vice_president', position_label: 'Vice President', max_votes: 1, sort_order: 20 },
+  { position_key: 'secretary_general', position_label: 'Secretary General', max_votes: 1, sort_order: 30 },
+  { position_key: 'joint_secretary', position_label: 'Joint Secretary', max_votes: 1, sort_order: 40 },
+  { position_key: 'treasurer', position_label: 'Treasurer', max_votes: 1, sort_order: 50 },
+  { position_key: 'ec_member', position_label: 'EC Member', max_votes: 1, sort_order: 60 },
+];
+
+export function electionPositionKey(position) {
+  const normalized = String(position || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  if (!normalized) return 'general';
+  if (/(^| )ec( |$)/.test(normalized) || normalized.includes('executive committee')) return 'ec_member';
+  if (normalized.includes('vice') && normalized.includes('president')) return 'vice_president';
+  if (normalized.includes('president')) return 'president';
+  if (normalized.includes('secretary') && normalized.includes('general')) return 'secretary_general';
+  if (normalized.includes('joint') && normalized.includes('secretary')) return 'joint_secretary';
+  if (normalized.includes('treasurer')) return 'treasurer';
+  return normalized.replace(/\s+/g, '_');
+}
+
+export function getElectionVoteLimit(election, position) {
+  const key = electionPositionKey(position);
+  const limit = (election?.vote_limits || defaultElectionVoteLimits).find((item) => item.position_key === key);
+  return Math.min(15, Math.max(1, Number(limit?.max_votes || 1)));
+}
+
+function emptyVoteGroup() {
+  return { all: [], byCandidate: {}, byPosition: {} };
+}
+
+export function normalizeVoteGroup(vote) {
+  if (!vote) return emptyVoteGroup();
+  if (Array.isArray(vote.all)) return vote;
+
+  const key = vote.position_key || electionPositionKey(vote.candidate?.position);
+  return {
+    ...vote,
+    all: [vote],
+    byCandidate: { [vote.candidate_id]: vote },
+    byPosition: { [key]: [vote] },
+  };
+}
+
 export function electionRuntimeStatus(election) {
   if (!election) return 'unknown';
-  if (election.status === 'draft' || election.status === 'archived') return election.status;
+  if (election.status === 'draft' || election.status === 'archived' || election.status === 'closed') return election.status;
 
   const now = Date.now();
   const startsAt = election.starts_at ? new Date(election.starts_at).getTime() : null;
   const endsAt = election.ends_at ? new Date(election.ends_at).getTime() : null;
 
-  if (startsAt && now < startsAt) return 'scheduled';
   if (endsAt && now > endsAt) return 'closed';
+  if (startsAt && now < startsAt) return 'scheduled';
+  if (election.status === 'scheduled' && !startsAt) return 'scheduled';
+  if (election.status === 'scheduled' || election.status === 'active') return 'active';
   return election.status;
 }
 
-export function canVoteInElection(election, profile, vote) {
+export function canVoteInElection(election, profile, vote, candidate = null) {
   const runtimeStatus = electionRuntimeStatus(election);
   const completeProfile = Boolean(profile?.full_name && profile?.registration_no && profile?.photo_path);
+  const voteGroup = normalizeVoteGroup(vote);
+  const positionKey = candidate ? electionPositionKey(candidate.position) : null;
+  const candidateVote = candidate ? voteGroup.byCandidate?.[candidate.id] : null;
+  const positionVotes = positionKey ? voteGroup.byPosition?.[positionKey] || [] : [];
+  const maxVotes = candidate ? getElectionVoteLimit(election, candidate.position) : null;
+  const positionLimitReached = Boolean(candidate && positionVotes.length >= maxVotes);
 
   return {
-    allowed: runtimeStatus === 'active' && completeProfile && !vote,
+    allowed: runtimeStatus === 'active' && completeProfile && !candidateVote && !positionLimitReached,
     runtimeStatus,
     completeProfile,
-    reason: vote
-      ? 'You have already voted in this election.'
-      : !completeProfile
-        ? 'Complete your voter profile before voting.'
-        : runtimeStatus !== 'active'
-          ? 'Voting is not active right now.'
-          : '',
+    candidateVote,
+    positionKey,
+    positionVotes,
+    maxVotes,
+    positionLimitReached,
+    reason: candidateVote
+      ? 'You have already voted for this nominee.'
+      : positionLimitReached
+        ? `You have already used ${maxVotes} vote${maxVotes === 1 ? '' : 's'} for ${candidate.position}.`
+        : !completeProfile
+          ? 'Complete your voter profile before voting.'
+          : runtimeStatus !== 'active'
+            ? 'Voting is not active right now.'
+            : '',
   };
 }
 
@@ -117,6 +182,13 @@ export async function listElections({ admin = false } = {}) {
         photo_path,
         sort_order,
         is_active
+      ),
+      election_vote_limits (
+        id,
+        position_key,
+        position_label,
+        max_votes,
+        sort_order
       )
     `)
     .order('created_at', { ascending: false });
@@ -196,6 +268,13 @@ export async function getElectionWithCandidates(slug) {
         photo_path,
         sort_order,
         is_active
+      ),
+      election_vote_limits (
+        id,
+        position_key,
+        position_label,
+        max_votes,
+        sort_order
       )
     `)
     .eq('slug', slug)
@@ -220,6 +299,7 @@ export async function getMyVotes(electionIds = []) {
       id,
       election_id,
       candidate_id,
+      position_key,
       created_at,
       election_candidates (
         id,
@@ -232,11 +312,19 @@ export async function getMyVotes(electionIds = []) {
 
   if (error) throw error;
 
-  return (data || []).reduce((votes, vote) => {
-    votes[vote.election_id] = {
-      ...vote,
-      candidate: vote.election_candidates,
+  return (data || []).reduce((votes, row) => {
+    const vote = {
+      ...row,
+      candidate: row.election_candidates,
     };
+    const positionKey = vote.position_key || electionPositionKey(vote.candidate?.position);
+    const group = votes[vote.election_id] || emptyVoteGroup();
+
+    group.all.push(vote);
+    group.byCandidate[vote.candidate_id] = vote;
+    group.byPosition[positionKey] = [...(group.byPosition[positionKey] || []), vote];
+
+    votes[vote.election_id] = group;
     return votes;
   }, {});
 }
@@ -295,6 +383,26 @@ export async function updateElection(id, input) {
 
   if (error) throw error;
   return data;
+}
+
+export async function updateElectionVoteLimits(electionId, limits = []) {
+  if (!electionId) throw new Error('Election is required.');
+
+  const payload = limits.map((limit, index) => ({
+    election_id: electionId,
+    position_key: limit.position_key,
+    position_label: limit.position_label,
+    max_votes: Math.min(15, Math.max(1, Number(limit.max_votes || 1))),
+    sort_order: Number(limit.sort_order ?? index * 10),
+  }));
+
+  const { data, error } = await supabase
+    .from('election_vote_limits')
+    .upsert(payload, { onConflict: 'election_id,position_key' })
+    .select();
+
+  if (error) throw error;
+  return data || [];
 }
 
 export async function createCandidate(input, userId) {
@@ -525,6 +633,7 @@ export async function listElectionVotes(electionId) {
       candidate_id,
       voter_id,
       voter_registration_no,
+      position_key,
       created_at,
       election_candidates!election_votes_candidate_id_fkey (
         id,
@@ -579,6 +688,11 @@ export function subscribeToElectionChanges({ electionId, voterId, onChange }) {
     )
     .on(
       'postgres_changes',
+      { event: '*', schema: 'public', table: 'election_vote_limits', filter: `election_id=eq.${electionId}` },
+      onChange,
+    )
+    .on(
+      'postgres_changes',
       { event: '*', schema: 'public', table: 'election_votes', filter: `election_id=eq.${electionId}` },
       onChange,
     )
@@ -613,10 +727,12 @@ export function summarizeElectionVotes(election, votes = [], activeVoterCount = 
   const leader = candidateStats[0] || null;
   const runnerUp = candidateStats[1] || null;
   const margin = leader ? leader.voteCount - (runnerUp?.voteCount || 0) : 0;
-  const turnoutPercent = activeVoterCount ? Math.round((totalVotes / activeVoterCount) * 100) : 0;
+  const votersParticipated = new Set(votes.map((vote) => vote.voter_id).filter(Boolean)).size;
+  const turnoutPercent = activeVoterCount ? Math.round((votersParticipated / activeVoterCount) * 100) : 0;
 
   return {
     totalVotes,
+    votersParticipated,
     activeVoterCount,
     turnoutPercent,
     candidateStats,
@@ -630,11 +746,18 @@ function normalizeElectionRecord(record) {
   const candidates = (record.election_candidates || [])
     .slice()
     .sort((a, b) => (a.sort_order - b.sort_order) || a.full_name.localeCompare(b.full_name));
+  const loadedLimits = (record.election_vote_limits || [])
+    .slice()
+    .sort((a, b) => (a.sort_order - b.sort_order) || a.position_label.localeCompare(b.position_label));
+  const limitMap = new Map(defaultElectionVoteLimits.map((limit) => [limit.position_key, { ...limit }]));
+  loadedLimits.forEach((limit) => limitMap.set(limit.position_key, { ...limit, max_votes: Number(limit.max_votes || 1) }));
 
   return {
     ...record,
     candidates,
+    vote_limits: Array.from(limitMap.values()).sort((a, b) => (a.sort_order - b.sort_order) || a.position_label.localeCompare(b.position_label)),
     election_candidates: undefined,
+    election_vote_limits: undefined,
   };
 }
 
@@ -689,3 +812,6 @@ function emptyCandidateCv() {
     cv_size: null,
   };
 }
+
+
+

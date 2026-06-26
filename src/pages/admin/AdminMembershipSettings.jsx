@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import AdminShell from '../../components/admin/AdminShell';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import {
@@ -409,7 +409,7 @@ const AdminMembershipSettings = () => {
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <Field label="Number prefix">
-                      <input name="number_prefix" value={planForm.number_prefix || ''} onChange={updatePlanField} maxLength="8" className="field-input uppercase" placeholder="L, AH, OS" />
+                      <input name="number_prefix" value={planForm.number_prefix || ''} onChange={updatePlanField} maxLength="8" className="field-input uppercase" placeholder="L, AH, O" />
                       <p className="mt-1 text-xs text-gray-500">Used when admin leaves membership number blank.</p>
                     </Field>
                     <Field label="Validity years">
@@ -444,7 +444,7 @@ const AdminMembershipSettings = () => {
                         <p className="mt-2 font-bold text-primary">{plan.label}</p>
                         <p className="text-sm font-semibold text-gray-700">{plan.amountLabel || plan.amount_label}</p>
                         <p className="mt-1 text-xs font-semibold text-gray-500">
-                          Prefix: {plan.numberPrefix || plan.number_prefix || 'Auto'} · Validity: {plan.validityYears || plan.validity_years ? `${plan.validityYears || plan.validity_years} years` : 'Lifetime'}
+                          Prefix: {plan.numberPrefix || plan.number_prefix || 'Auto'} Â· Validity: {plan.validityYears || plan.validity_years ? `${plan.validityYears || plan.validity_years} years` : 'Lifetime'}
                         </p>
                         {plan.description && <p className="mt-1 text-sm text-gray-500">{plan.description}</p>}
                       </div>
@@ -563,3 +563,4 @@ function formatPlanAmountLabel(amount, currency) {
 }
 
 export default AdminMembershipSettings;
+

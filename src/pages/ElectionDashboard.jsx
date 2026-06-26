@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CandidateAvatar from '../components/elections/CandidateAvatar';
@@ -7,6 +7,7 @@ import ElectionStatusPill from '../components/elections/ElectionStatusPill';
 import { useAuth } from '../hooks/useAuth';
 import {
   canVoteInElection,
+  electionRuntimeStatus,
   formatDateTime,
   getMyVotes,
   listElections,
@@ -54,7 +55,7 @@ const ElectionDashboard = () => {
   }, [elections, loadDashboard, user]);
 
   const activeCount = useMemo(
-    () => elections.filter((election) => election.status === 'active').length,
+    () => elections.filter((election) => electionRuntimeStatus(election) === 'active').length,
     [elections],
   );
 
@@ -73,7 +74,7 @@ const ElectionDashboard = () => {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-gold-DEFAULT">Member Voting Area</p>
               <h1 className="safe-wrap mt-3 font-display text-2xl font-bold leading-tight text-primary sm:text-3xl md:text-4xl">Elections & Nominations</h1>
               <p className="safe-wrap mt-3 max-w-2xl text-gray-600">
-                Review nominees, open a shareable voting link, and cast one verified vote per election.
+                Review nominees, open a shareable voting link, and cast verified votes as allowed for each post.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -187,8 +188,8 @@ const ElectionDashboard = () => {
 };
 
 const CandidateCard = ({ election, candidate, vote, profile }) => {
-  const voteState = canVoteInElection(election, profile, vote);
-  const selected = vote?.candidate_id === candidate.id;
+  const voteState = canVoteInElection(election, profile, vote, candidate);
+  const selected = Boolean(vote?.byCandidate?.[candidate.id]);
 
   return (
     <article className="max-w-full overflow-hidden rounded-lg border border-gray-100 bg-[#fbfcfe] p-4 sm:p-5">
@@ -232,8 +233,8 @@ const CandidateTable = ({ election, candidates, vote, profile }) => (
       </thead>
       <tbody className="divide-y divide-gray-100 bg-white">
         {candidates.map((candidate) => {
-          const voteState = canVoteInElection(election, profile, vote);
-          const selected = vote?.candidate_id === candidate.id;
+          const voteState = canVoteInElection(election, profile, vote, candidate);
+  const selected = Boolean(vote?.byCandidate?.[candidate.id]);
           return (
             <tr key={candidate.id} className="hover:bg-gray-50">
               <td className="px-4 py-3">
@@ -309,3 +310,4 @@ const EmptyState = ({ icon, title, text }) => (
 );
 
 export default ElectionDashboard;
+
