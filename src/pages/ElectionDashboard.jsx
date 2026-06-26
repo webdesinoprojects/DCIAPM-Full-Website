@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CandidateAvatar from '../components/elections/CandidateAvatar';
@@ -10,6 +10,7 @@ import {
   electionRuntimeStatus,
   formatDateTime,
   getMyVotes,
+  getPositionVoteUsage,
   listElections,
   subscribeToElectionChanges,
 } from '../lib/elections';
@@ -189,6 +190,7 @@ const ElectionDashboard = () => {
 
 const CandidateCard = ({ election, candidate, vote, profile }) => {
   const voteState = canVoteInElection(election, profile, vote, candidate);
+  const voteUsage = getPositionVoteUsage(election, vote, candidate.position);
   const selected = Boolean(vote?.byCandidate?.[candidate.id]);
 
   return (
@@ -204,6 +206,9 @@ const CandidateCard = ({ election, candidate, vote, profile }) => {
       {candidate.message && (
         <p className="safe-wrap mt-4 line-clamp-3 text-sm leading-6 text-gray-600">{candidate.message}</p>
       )}
+      <p className="mt-4 rounded-lg bg-white px-3 py-2 text-xs font-bold text-gray-600 ring-1 ring-gray-100">
+        {voteUsage.usedVotes} / {voteUsage.maxVotes} votes used for {candidate.position}
+      </p>
       <Link
         to={`/elections/${election.slug}/candidates/${candidate.slug}`}
         className={`mt-5 inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-bold transition ${
@@ -234,7 +239,8 @@ const CandidateTable = ({ election, candidates, vote, profile }) => (
       <tbody className="divide-y divide-gray-100 bg-white">
         {candidates.map((candidate) => {
           const voteState = canVoteInElection(election, profile, vote, candidate);
-  const selected = Boolean(vote?.byCandidate?.[candidate.id]);
+          const voteUsage = getPositionVoteUsage(election, vote, candidate.position);
+          const selected = Boolean(vote?.byCandidate?.[candidate.id]);
           return (
             <tr key={candidate.id} className="hover:bg-gray-50">
               <td className="px-4 py-3">
@@ -249,6 +255,9 @@ const CandidateTable = ({ election, candidates, vote, profile }) => (
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${selected ? 'bg-green-50 text-green-700' : voteState.allowed ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                   {selected ? 'Voted' : voteState.allowed ? 'Open' : 'View only'}
                 </span>
+                <p className="mt-2 text-xs font-semibold text-gray-500">
+                  {voteUsage.usedVotes} / {voteUsage.maxVotes} used
+                </p>
               </td>
             </tr>
           );

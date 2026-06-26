@@ -1,4 +1,4 @@
-﻿import { isSupabaseConfigured, supabase } from './supabase';
+import { isSupabaseConfigured, supabase } from './supabase';
 import { uploadContentFile } from './contentUpload';
 
 export const electionStatuses = ['draft', 'scheduled', 'active', 'closed', 'archived'];
@@ -41,19 +41,25 @@ export const defaultElectionVoteLimits = [
 ];
 
 export function electionPositionKey(position) {
-  const normalized = String(position || '')
-    .toLowerCase()
+  const raw = String(position || '').toLowerCase();
+  const normalized = raw
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ');
+  const compact = raw.replace(/[^a-z0-9]+/g, '');
 
   if (!normalized) return 'general';
-  if (/(^| )ec( |$)/.test(normalized) || normalized.includes('executive committee')) return 'ec_member';
-  if (normalized.includes('vice') && normalized.includes('president')) return 'vice_president';
-  if (normalized.includes('president')) return 'president';
-  if (normalized.includes('secretary') && normalized.includes('general')) return 'secretary_general';
-  if (normalized.includes('joint') && normalized.includes('secretary')) return 'joint_secretary';
-  if (normalized.includes('treasurer')) return 'treasurer';
+  if (
+    /(^| )ec( |$)/.test(normalized)
+    || ['ec', 'ecmember', 'ecmembers', 'ecmem', 'ecmems'].includes(compact)
+    || normalized.includes('executive committee')
+    || ['executivecommittee', 'executivecommitteemember', 'executivecommitteemembers'].includes(compact)
+  ) return 'ec_member';
+  if ((normalized.includes('vice') && normalized.includes('president')) || compact === 'vicepresident') return 'vice_president';
+  if ((normalized.includes('secretary') && normalized.includes('general')) || compact === 'secretarygeneral') return 'secretary_general';
+  if ((normalized.includes('joint') && normalized.includes('secretary')) || compact === 'jointsecretary') return 'joint_secretary';
+  if (normalized.includes('treasurer') || compact === 'treasurer') return 'treasurer';
+  if (normalized.includes('president') || compact === 'president') return 'president';
   return normalized.replace(/\s+/g, '_');
 }
 
@@ -61,6 +67,20 @@ export function getElectionVoteLimit(election, position) {
   const key = electionPositionKey(position);
   const limit = (election?.vote_limits || defaultElectionVoteLimits).find((item) => item.position_key === key);
   return Math.min(15, Math.max(1, Number(limit?.max_votes || 1)));
+}
+
+export function getPositionVoteUsage(election, vote, position) {
+  const positionKey = electionPositionKey(position);
+  const voteGroup = normalizeVoteGroup(vote);
+  const positionVotes = voteGroup.byPosition?.[positionKey] || [];
+  const maxVotes = getElectionVoteLimit(election, position);
+
+  return {
+    positionKey,
+    usedVotes: positionVotes.length,
+    maxVotes,
+    remainingVotes: Math.max(0, maxVotes - positionVotes.length),
+  };
 }
 
 function emptyVoteGroup() {

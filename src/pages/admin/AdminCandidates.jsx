@@ -224,7 +224,27 @@ const AdminCandidates = () => {
                 </label>
                 <label className="block">
                   <span className="field-label">Position</span>
-                  <input name="position" value={form.position} onChange={updateField} required maxLength="120" className="field-input" placeholder="President, Secretary, Member..." />
+                  <input
+                    name="position"
+                    value={form.position}
+                    onChange={updateField}
+                    required
+                    maxLength="120"
+                    list="candidate-position-options"
+                    className="field-input"
+                    placeholder="President, Vice President, EC Member..."
+                  />
+                  <datalist id="candidate-position-options">
+                    <option value="President" />
+                    <option value="Vice President" />
+                    <option value="Secretary General" />
+                    <option value="Joint Secretary" />
+                    <option value="Treasurer" />
+                    <option value="EC Member" />
+                  </datalist>
+                  <p className="mt-2 text-xs font-semibold text-gray-500">
+                    Use EC Member for executive committee nominees. EC vote count comes from the election voting rights setting.
+                  </p>
                 </label>
               </div>
 
@@ -345,20 +365,20 @@ const AdminCandidates = () => {
                 </div>
               ) : (
                 election.candidates.map((candidate) => (
-                  <article key={candidate.id} className="rounded-lg border border-gray-100 bg-[#fbfcfe] p-4">
+                  <article key={candidate.id} className="max-w-full overflow-hidden rounded-lg border border-gray-100 bg-[#fbfcfe] p-4">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="flex items-start gap-4">
-                        <CandidateAvatar candidate={candidate} size="lg" />
-                        <div>
-                          <h3 className="text-lg font-bold text-primary">{candidate.full_name}</h3>
-                          <p className="mt-1 text-sm font-bold text-gray-700">{candidate.position}</p>
-                          <p className="mt-1 text-xs font-semibold text-gray-500">Reg. {candidate.registration_no}</p>
-                          {candidate.message && <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600">{candidate.message}</p>}
+                      <div className="flex min-w-0 items-start gap-4">
+                        <CandidateAvatar candidate={candidate} size="lg" className="flex-shrink-0" />
+                        <div className="min-w-0">
+                          <h3 className="safe-wrap text-lg font-bold text-primary">{candidate.full_name}</h3>
+                          <p className="safe-wrap mt-1 text-sm font-bold text-gray-700">{candidate.position}</p>
+                          <p className="safe-wrap mt-1 text-xs font-semibold text-gray-500">Reg. {candidate.registration_no}</p>
+                          {candidate.message && <p className="safe-wrap mt-3 max-w-2xl text-sm leading-6 text-gray-600">{candidate.message}</p>}
                           <div className="mt-3 grid gap-2 text-xs font-semibold text-gray-500 sm:grid-cols-2">
-                            {candidate.current_designation && <p>Designation: {candidate.current_designation}</p>}
-                            {candidate.institution && <p>Institution: {candidate.institution}</p>}
-                            {candidate.qualification && <p>Qualification: {candidate.qualification}</p>}
-                            {candidate.cv_file_name && <p>CV: {candidate.cv_file_name}</p>}
+                            {candidate.current_designation && <p className="safe-wrap">Designation: {candidate.current_designation}</p>}
+                            {candidate.institution && <p className="safe-wrap">Institution: {candidate.institution}</p>}
+                            {candidate.qualification && <p className="safe-wrap">Qualification: {candidate.qualification}</p>}
+                            {candidate.cv_file_name && <p className="safe-wrap">CV: {candidate.cv_file_name}</p>}
                           </div>
                         </div>
                       </div>

@@ -142,15 +142,15 @@ const AdminElections = () => {
                   {filtered.map((election) => (
                     <tr key={election.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <Link to={`/admin/elections/${election.slug}`} className="font-bold text-primary hover:underline">
+                        <Link to={`/admin/elections/${election.slug}`} className="safe-wrap block max-w-lg font-bold text-primary hover:underline">
                           {election.title}
                         </Link>
-                        {election.description && <p className="mt-1 max-w-md text-xs text-gray-500">{election.description}</p>}
+                        {election.description && <p className="safe-wrap mt-1 max-w-lg text-xs leading-5 text-gray-500">{election.description}</p>}
                       </td>
                       <td className="px-4 py-3"><ElectionStatusPill election={election} /></td>
                       <td className="px-4 py-3 font-bold text-gray-900">{election.candidates.length}</td>
                       <td className="px-4 py-3 font-bold text-gray-900">{voteCounts[election.id] || 0}</td>
-                      <td className="px-4 py-3 text-gray-600">{formatDateTime(election.starts_at)} to {formatDateTime(election.ends_at)}</td>
+                      <td className="safe-wrap px-4 py-3 text-gray-600">{formatDateTime(election.starts_at)} to {formatDateTime(election.ends_at)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <ActionLink to={`/admin/elections/${election.slug}`}>Edit</ActionLink>

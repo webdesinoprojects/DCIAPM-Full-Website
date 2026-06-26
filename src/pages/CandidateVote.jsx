@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CandidateAvatar from '../components/elections/CandidateAvatar';
@@ -11,6 +11,7 @@ import {
   formatDateTime,
   getCandidateForVote,
   getCandidateCvSignedUrl,
+  getPositionVoteUsage,
   getMyVotes,
   subscribeToElectionChanges,
   voteMessages,
@@ -81,6 +82,7 @@ const CandidateVote = () => {
   }, [election, loadVotePage, user]);
 
   const voteState = useMemo(() => canVoteInElection(election, profile, vote, candidate), [candidate, election, profile, vote]);
+  const voteUsage = useMemo(() => getPositionVoteUsage(election, vote, candidate?.position), [candidate, election, vote]);
   const votedForThisCandidate = Boolean(voteState.candidateVote);
 
   const submitVote = async () => {
@@ -213,7 +215,7 @@ const CandidateVote = () => {
           </h2>
 
           {(votedForThisCandidate || voteState.positionLimitReached) ? (
-            <div className="mt-5 rounded-lg border border-green-100 bg-green-50 p-4 text-green-800">
+            <div className={`mt-5 rounded-lg border p-4 ${votedForThisCandidate ? 'border-green-100 bg-green-50 text-green-800' : 'border-blue-100 bg-blue-50 text-blue-800'}`}>
               <p className="font-bold">
                 {votedForThisCandidate
                   ? 'Your vote is recorded for this nominee.'
@@ -222,15 +224,16 @@ const CandidateVote = () => {
               <p className="mt-1 text-sm">
                 {votedForThisCandidate
                   ? 'No further action is needed. You can safely leave this page.'
-                  : 'Open another post if you still have voting rights there.'}
+                  : `You have used ${voteUsage.usedVotes} of ${voteUsage.maxVotes} vote${voteUsage.maxVotes === 1 ? '' : 's'} for this post.`}
               </p>
             </div>
           ) : (
             <>
               <div className="mt-5 rounded-lg border border-gray-100 bg-[#fbfcfe] p-4">
                 <p className="text-sm leading-6 text-gray-700">
-                  This action follows the vote limit for this post. Please review the nominee details before confirming.
+                  You have used {voteUsage.usedVotes} of {voteUsage.maxVotes} vote{voteUsage.maxVotes === 1 ? '' : 's'} allowed for {candidate.position}.
                 </p>
+                <p className="mt-1 text-xs font-semibold text-gray-500">Review the nominee details before confirming.</p>
               </div>
 
               {!voteState.allowed && voteState.reason && (

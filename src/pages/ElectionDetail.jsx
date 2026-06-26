@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CandidateAvatar from '../components/elections/CandidateAvatar';
@@ -9,6 +9,7 @@ import {
   canVoteInElection,
   formatDateTime,
   getElectionWithCandidates,
+  getPositionVoteUsage,
   getMyVotes,
   subscribeToElectionChanges,
 } from '../lib/elections';
@@ -125,6 +126,7 @@ const ElectionDetail = () => {
                 election={election}
                 candidate={candidate}
                 selected={Boolean(vote?.byCandidate?.[candidate.id])}
+                vote={vote}
                 voteState={canVoteInElection(election, profile, vote, candidate)}
               />
             ))}
@@ -178,7 +180,10 @@ const ElectionDetail = () => {
   );
 };
 
-const NomineeCard = ({ election, candidate, selected, voteState }) => (
+const NomineeCard = ({ election, candidate, selected, vote, voteState }) => {
+  const voteUsage = getPositionVoteUsage(election, vote, candidate.position);
+
+  return (
   <Link
     to={`/elections/${election.slug}/candidates/${candidate.slug}`}
     className="group block max-w-full overflow-hidden rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:p-5"
@@ -196,6 +201,9 @@ const NomineeCard = ({ election, candidate, selected, voteState }) => (
     {candidate.message && (
       <p className="safe-wrap mt-5 text-sm leading-6 text-gray-600">{candidate.message}</p>
     )}
+    <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs font-bold text-gray-600 ring-1 ring-gray-100">
+      {voteUsage.usedVotes} / {voteUsage.maxVotes} votes used for {candidate.position}
+    </p>
     <div className="mt-4 flex flex-wrap gap-2">
       {candidate.profile_summary && <span className="safe-wrap rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Short CV added</span>}
       {candidate.agenda && <span className="safe-wrap rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Agenda added</span>}
@@ -211,7 +219,8 @@ const NomineeCard = ({ election, candidate, selected, voteState }) => (
       {selected ? 'Your vote' : voteState.allowed ? 'Open vote page' : 'View details'}
     </span>
   </Link>
-);
+  );
+};
 
 const ToggleButton = ({ active, onClick, icon, label }) => (
   <button
