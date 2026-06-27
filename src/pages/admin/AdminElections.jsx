@@ -10,6 +10,7 @@ import {
   formatDateTime,
   listElectionVotes,
   listElections,
+  resetElectionVotes,
 } from '../../lib/elections';
 
 const AdminElections = () => {
@@ -44,8 +45,13 @@ const AdminElections = () => {
   const runPendingAction = async () => {
     if (!pendingAction) return;
     try {
-      await deleteElection(pendingAction.election.id);
-      setActionStatus({ type: 'success', message: 'Election deleted.' });
+      if (pendingAction.kind === 'reset-votes') {
+        const deletedVotes = await resetElectionVotes(pendingAction.election.id);
+        setActionStatus({ type: 'success', message: `${deletedVotes} vote${deletedVotes === 1 ? '' : 's'} cleared for "${pendingAction.election.title}".` });
+      } else {
+        await deleteElection(pendingAction.election.id);
+        setActionStatus({ type: 'success', message: 'Election deleted.' });
+      }
       setPendingAction(null);
       await loadElections();
     } catch (actionError) {
@@ -59,6 +65,14 @@ const AdminElections = () => {
       kind: 'delete',
       election,
       hasVotes,
+    });
+  };
+
+  const requestVoteReset = (election) => {
+    setPendingAction({
+      kind: 'reset-votes',
+      election,
+      voteCount: voteCounts[election.id] || 0,
     });
   };
 
@@ -85,13 +99,15 @@ const AdminElections = () => {
 
       <ConfirmDialog
         open={Boolean(pendingAction)}
-        title="Delete election?"
+        title={pendingAction?.kind === 'reset-votes' ? 'Reset election votes?' : 'Delete election?'}
         body={
-          pendingAction?.hasVotes
-            ? `"${pendingAction?.election.title}" has recorded votes. Deleting it will permanently remove the election, nominees, and all vote records. This cannot be undone.`
-            : `"${pendingAction?.election.title}" will be permanently deleted. Nominees attached to it will also be removed. This cannot be undone.`
+          pendingAction?.kind === 'reset-votes'
+            ? `This will permanently clear ${pendingAction.voteCount || 0} vote${pendingAction.voteCount === 1 ? '' : 's'} for "${pendingAction?.election.title}" only. The election and nominees will remain, and voters can vote again.`
+            : pendingAction?.hasVotes
+              ? `"${pendingAction?.election.title}" has recorded votes. Deleting it will permanently remove the election, nominees, and all vote records. This cannot be undone.`
+              : `"${pendingAction?.election.title}" will be permanently deleted. Nominees attached to it will also be removed. This cannot be undone.`
         }
-        confirmLabel="Delete"
+        confirmLabel={pendingAction?.kind === 'reset-votes' ? 'Reset votes' : 'Delete'}
         destructive
         onConfirm={runPendingAction}
         onCancel={() => setPendingAction(null)}
@@ -156,6 +172,14 @@ const AdminElections = () => {
                           <ActionLink to={`/admin/elections/${election.slug}`}>Edit</ActionLink>
                           <ActionLink to={`/admin/elections/${election.slug}/candidates`}>Nominees</ActionLink>
                           <ActionLink to={`/admin/elections/${election.slug}/votes`}>Votes</ActionLink>
+                          <button
+                            type="button"
+                            onClick={() => requestVoteReset(election)}
+                            disabled={(voteCounts[election.id] || 0) === 0}
+                            className="rounded-lg border border-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Reset votes
+                          </button>
                           <button
                             type="button"
                             onClick={() => requestDelete(election)}

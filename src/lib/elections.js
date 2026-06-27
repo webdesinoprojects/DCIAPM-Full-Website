@@ -486,6 +486,12 @@ export async function deleteElection(id) {
   if (error) throw error;
 }
 
+export async function resetElectionVotes(id) {
+  const { data, error } = await supabase.rpc('reset_election_votes_admin', { p_election_id: id });
+  if (error) throw error;
+  return Number(data || 0);
+}
+
 export async function archiveElection(id) {
   const { data, error } = await supabase
     .from('elections')
