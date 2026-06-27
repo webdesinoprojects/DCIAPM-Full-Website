@@ -366,6 +366,13 @@ function friendlyAuthError(message = '') {
   const normalized = message.toLowerCase();
 
   if (
+    normalized.includes('ad_hoc_not_eligible')
+    || normalized.includes('ad hoc members are not eligible')
+  ) {
+    return friendlyRegistrationError('AD_HOC_NOT_ELIGIBLE');
+  }
+
+  if (
     normalized.includes('registration_not_found')
     || normalized.includes('registration number is not in the active member directory')
   ) {
@@ -455,6 +462,13 @@ function friendlyProfileError(message = '') {
     return friendlyRegistrationError('REGISTRATION_ALREADY_USED');
   }
 
+  if (
+    normalized.includes('ad_hoc_not_eligible')
+    || normalized.includes('ad hoc members are not eligible')
+  ) {
+    return friendlyRegistrationError('AD_HOC_NOT_ELIGIBLE');
+  }
+
   if (normalized.includes('registration_not_found')) {
     return friendlyRegistrationError('REGISTRATION_NOT_FOUND');
   }
@@ -482,6 +496,8 @@ function friendlyRegistrationError(code, fallbackMessage = '') {
       return 'This registration number is not in the active member directory. Please check the number or contact admin.';
     case 'REGISTRATION_ALREADY_USED':
       return 'This registration number is already linked to another account.';
+    case 'AD_HOC_NOT_ELIGIBLE':
+      return 'Ad Hoc members are not eligible to vote in DC-IAPM elections. Please contact the administrator if this is incorrect.';
     default:
       return fallbackMessage || 'Registration number could not be verified. Please check the number and try again.';
   }

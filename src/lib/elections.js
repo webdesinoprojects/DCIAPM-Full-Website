@@ -7,6 +7,7 @@ export const voteMessages = {
   VOTE_RECORDED: 'Your vote has been recorded.',
   ALREADY_VOTED: 'You have already voted for this nominee.',
   POSITION_VOTE_LIMIT_REACHED: 'You have already used the allowed votes for this post.',
+  AD_HOC_NOT_ELIGIBLE: 'Ad Hoc members are not eligible to vote in DC-IAPM elections. Please contact the administrator if this is incorrect.',
   AUTH_REQUIRED: 'Please log in before voting.',
   PROFILE_NOT_ALLOWED: 'This account is not eligible to vote.',
   PROFILE_INCOMPLETE: 'Complete your voter profile with name, registration number and photo before voting.',
@@ -29,6 +30,10 @@ export function slugify(value) {
 
 export function normalizeRegistrationNo(value) {
   return String(value || '').trim().replace(/\s+/g, '').toUpperCase();
+}
+
+export function isAdHocRegistration(registrationNo) {
+  return normalizeRegistrationNo(registrationNo).startsWith('AH');
 }
 
 export const defaultElectionVoteLimits = [
@@ -118,6 +123,7 @@ export function electionRuntimeStatus(election) {
 export function canVoteInElection(election, profile, vote, candidate = null) {
   const runtimeStatus = electionRuntimeStatus(election);
   const completeProfile = Boolean(profile?.full_name && profile?.registration_no && profile?.photo_path);
+  const adHocNotEligible = isAdHocRegistration(profile?.registration_no);
   const voteGroup = normalizeVoteGroup(vote);
   const positionKey = candidate ? electionPositionKey(candidate.position) : null;
   const candidateVote = candidate ? voteGroup.byCandidate?.[candidate.id] : null;
@@ -126,7 +132,7 @@ export function canVoteInElection(election, profile, vote, candidate = null) {
   const positionLimitReached = Boolean(candidate && positionVotes.length >= maxVotes);
 
   return {
-    allowed: runtimeStatus === 'active' && completeProfile && !candidateVote && !positionLimitReached,
+    allowed: runtimeStatus === 'active' && completeProfile && !adHocNotEligible && !candidateVote && !positionLimitReached,
     runtimeStatus,
     completeProfile,
     candidateVote,
@@ -134,15 +140,18 @@ export function canVoteInElection(election, profile, vote, candidate = null) {
     positionVotes,
     maxVotes,
     positionLimitReached,
+    adHocNotEligible,
     reason: candidateVote
       ? 'You have already voted for this nominee.'
       : positionLimitReached
         ? `You have already used ${maxVotes} vote${maxVotes === 1 ? '' : 's'} for ${candidate.position}.`
-        : !completeProfile
-          ? 'Complete your voter profile before voting.'
-          : runtimeStatus !== 'active'
-            ? 'Voting is not active right now.'
-            : '',
+        : adHocNotEligible
+          ? voteMessages.AD_HOC_NOT_ELIGIBLE
+          : !completeProfile
+            ? 'Complete your voter profile before voting.'
+            : runtimeStatus !== 'active'
+              ? 'Voting is not active right now.'
+              : '',
   };
 }
 
@@ -684,14 +693,10 @@ export async function listElectionVotes(electionId) {
 }
 
 export async function countActiveVoters() {
-  const { count, error } = await supabase
-    .from('profiles')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'user')
-    .eq('is_active', true);
+  const { data, error } = await supabase.rpc('count_active_voting_profiles');
 
   if (error) throw error;
-  return count || 0;
+  return Number(data || 0);
 }
 
 export function subscribeToElectionChanges({ electionId, voterId, onChange }) {
