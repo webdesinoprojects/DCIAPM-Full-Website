@@ -31,6 +31,7 @@ const navGroups = [
       { label: 'Cases', to: '/admin/cases', icon: 'biotech' },
       { label: 'Publications', to: '/admin/publications', icon: 'article' },
       { label: 'Governing Body', to: '/admin/governing-body', icon: 'badge' },
+      { label: 'Leadership', to: '/admin/leadership-messages', icon: 'record_voice_over' },
       { label: 'Gallery', to: '/admin/gallery', icon: 'photo_library' },
       { label: 'Messages', to: '/admin/messages', icon: 'mail' },
     ],

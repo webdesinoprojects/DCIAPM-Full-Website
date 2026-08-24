@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
-import DrPrasenjitDas from '../../assets/Dr-Prasenjit-Das,-Secrertary-General.jpg';
 import { motion } from 'framer-motion';
+import { useLeadershipMessage } from '../../hooks/useLeadershipMessage';
 
 const SecretarySection = () => {
+  const secretary = useLeadershipMessage('secretary');
+
   return (
     <motion.section
       className="py-16 lg:py-24 bg-white dark:bg-background-dark"
@@ -22,16 +24,17 @@ const SecretarySection = () => {
           >
             <img
               className="w-64 h-64 rounded-full mx-auto object-contain border-4 border-gold shadow-xl"
-              src={DrPrasenjitDas}
+              src={secretary.image_url}
+              alt={secretary.name}
             />
             <h3 className="font-display text-2xl font-bold text-primary dark:text-white mt-6">
-              Dr Prasenjit Das
+              {secretary.name}
             </h3>
             <p className="text-gold-DEFAULT dark:text-gold-light font-semibold">
-              Secretary
+              {secretary.designation}
             </p>
             <p className="text-xs uppercase tracking-widest text-gray-600 dark:text-gray-200 mt-1">
-              DC-IAPM
+              {secretary.organization}
             </p>
           </motion.div>
 
@@ -40,11 +43,8 @@ const SecretarySection = () => {
               Message from the Secretary
             </h2>
             <div className="w-24 h-1 bg-gold-DEFAULT mb-6 mx-auto md:mx-0"></div>
-            <p className="text-gray-600 dark:text-gray-200 mb-2 text-justify">
-              Dear Colleagues,
-            </p>
             <p className="text-gray-600 dark:text-gray-200 mb-6 leading-relaxed text-justify">
-              "It gives me great pleasure to share an update from the Delhi Chapter of the Indian Association of Pathologists and Microbiologists (DC-IAPM)."
+              "{secretary.excerpt}"
             </p>
             <motion.div
               whileHover={{ scale: 0.95 }}

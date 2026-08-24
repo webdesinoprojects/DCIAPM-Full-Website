@@ -38,6 +38,7 @@ import AdminEvents from './pages/admin/AdminEvents';
 import AdminCases from './pages/admin/AdminCases';
 import AdminPublications from './pages/admin/AdminPublications';
 import AdminGoverningBody from './pages/admin/AdminGoverningBody';
+import AdminLeadershipMessages from './pages/admin/AdminLeadershipMessages';
 import AdminMembershipApplications from './pages/admin/AdminMembershipApplications';
 import AdminMembershipApplicationDetail from './pages/admin/AdminMembershipApplicationDetail';
 import AdminMembershipSettings from './pages/admin/AdminMembershipSettings';
@@ -273,6 +274,14 @@ function App() {
             element={(
               <ProtectedRoute requireAdmin>
                 <AdminGoverningBody />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/leadership-messages"
+            element={(
+              <ProtectedRoute requireAdmin>
+                <AdminLeadershipMessages />
               </ProtectedRoute>
             )}
           />

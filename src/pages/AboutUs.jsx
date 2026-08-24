@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
-import VicePresidentPhoto from '../assets/Dr-Arvind-Ahuja,-Treasurer.jpg';
+import LeadershipMessageBody from '../components/leadership/LeadershipMessageBody';
+import { useLeadershipMessage } from '../hooks/useLeadershipMessage';
 
 const AboutUs = () => {
+  const vicePresident = useLeadershipMessage('vice_president');
+
   return (
     <motion.main 
       className="container mx-auto px-6 py-12 md:py-20"
@@ -88,55 +91,26 @@ const AboutUs = () => {
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="md:w-1/3 text-center">
               <img
-                src={VicePresidentPhoto}
-                alt="Prof Arvind Ahuja"
+                src={vicePresident.image_url}
+                alt={vicePresident.name}
                 className="w-40 h-40 md:w-48 md:h-48 rounded-full mx-auto object-contain border-4 border-gold shadow-lg"
               />
               <h3 className="font-display text-2xl font-bold text-primary dark:text-white mt-5">
-                Prof Arvind Ahuja
+                {vicePresident.name}
               </h3>
-              <p className="text-gold-DEFAULT dark:text-gold-light font-semibold">Vice President</p>
-              <p className="text-xs uppercase tracking-widest text-gray-600 dark:text-gray-200 mt-1">DC-IAPM</p>
+              <p className="text-gold-DEFAULT dark:text-gold-light font-semibold">{vicePresident.designation}</p>
+              <p className="text-xs uppercase tracking-widest text-gray-600 dark:text-gray-200 mt-1">{vicePresident.organization}</p>
             </div>
             <div className="md:w-2/3">
               <h2 className="text-3xl font-bold font-display text-accent-blue dark:text-white mb-4 text-center md:text-left">
                 Message from the Vice President
               </h2>
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                Dear Esteemed Members and Colleagues,
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                It is both a privilege and a profound honor to serve as the Vice President of the Delhi Chapter of IAPM. I accept this responsibility with a deep sense of commitment to furthering our shared vision of excellence in training, collaboration, research, and academic advancement.
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                Our society, with a proud legacy spanning over 35 years, has consistently contributed to the growth and development of the field of pathology. In recent times, through the dedicated and collective efforts of our office bearers, we have achieved significant milestones, including formal registration under the Societies Act and the acquisition of a PAN card.. These developments mark an important step toward strengthening the institutional framework and governance of our society.
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                Having previously had the opportunity to serve as Treasurer and Secretary of the society, I have remained committed to enhancing transparency, efficiency, and accessibility through digital transformation. In this regard, it is especially gratifying to note that we are now have developed our new official website, which will serve as a dynamic platform for communication, knowledge sharing, and engagement among members.
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                We remain steadfast in our commitment to capacity building and continuous professional development. Through multidisciplinary workshops, hands-on training programs, academic conferences, and collaborative initiatives, we aim to create an environment that nurtures learning, encourages innovation, and facilitates the exchange of knowledge across institutions and among professionals at all stages of their careers.
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                As we move forward, I firmly believe that, together, we can position the Delhi Chapter of IAPM at the forefront of academic and professional excellence. By fostering innovation, embracing emerging technologies, and strengthening collaborative networks, we can significantly contribute to the advancement of pathology and its vital role in modern healthcare.
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                Standing at the threshold of a transformative era in medicine, I am optimistic and enthusiastic about the opportunities that lie ahead. I look forward to working closely with all of you in further strengthening our society and achieving new milestones of excellence.
-              </p>
-              &nbsp;
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-                With warm regards,<br />
-                <strong>Dr. Prof. Arvind Ahuja</strong><br />
-                Director Professor and Head<br />
-                ABVIMS, Dr RML Hospital, New Delhi<br />
-                (Vice President)
-              </p>
+              <div className="space-y-4">
+                <LeadershipMessageBody
+                  message={vicePresident.message}
+                  paragraphClassName="text-base text-gray-700 dark:text-gray-300 leading-relaxed text-justify"
+                />
+              </div>
             </div>
           </div>
         </motion.div>

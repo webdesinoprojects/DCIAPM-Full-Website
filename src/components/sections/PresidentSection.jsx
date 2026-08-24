@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import DrSonalSharma from '../../assets/Dr Sonal Sharma, President.jpg';
+import { useLeadershipMessage } from '../../hooks/useLeadershipMessage';
 
 const PresidentSection = () => {
+  const president = useLeadershipMessage('president');
+
   return (
     <motion.section 
       className="py-16 lg:py-24 bg-background-light dark:bg-primary"
@@ -22,16 +24,17 @@ const PresidentSection = () => {
           >
             <img 
               className="w-64 h-64 rounded-full mx-auto object-contain border-4 border-gold shadow-xl" 
-              src={DrSonalSharma}
+              src={president.image_url}
+              alt={president.name}
             />
             <h3 className="font-display text-2xl font-bold text-primary dark:text-white mt-6">
-              Prof (Dr) Sonal Sharma
+              {president.name}
             </h3>
             <p className="text-gold-DEFAULT dark:text-gold-light font-semibold">
-              President
+              {president.designation}
             </p>
             <p className="text-xs uppercase tracking-widest text-gray-600 dark:text-gray-200 mt-1">
-              DC-IAPM
+              {president.organization}
             </p>
           </motion.div>
           
@@ -41,7 +44,7 @@ const PresidentSection = () => {
             </h2>
             <div className="w-24 h-1 bg-gold-DEFAULT mb-6 mx-auto md:mx-0"></div>
             <p className="text-gray-600 dark:text-gray-200 mb-6 leading-relaxed text-justify">
-              "It gives me immense pleasure and pride to address you through the official website of the Delhi Chapter of the Indian Association of Pathologists and Microbiologists."
+              "{president.excerpt}"
             </p>
             <motion.div
               whileHover={{ scale: 0.95 }}
