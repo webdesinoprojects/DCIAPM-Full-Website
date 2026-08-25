@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mergeLeadershipFallback } from '../data/leadershipMessages';
+import { mergeLeadershipFallback } from '../content/leadershipMessages';
 import { getLeadershipMessage } from '../lib/leadership';
 import { logDevWarn } from '../lib/logger';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';

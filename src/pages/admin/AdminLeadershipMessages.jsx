@@ -7,7 +7,7 @@ import {
   StatusBlock,
 } from '../../components/admin/ContentAdminPrimitives';
 import SEO from '../../components/SEO';
-import { leadershipFallbacks, mergeLeadershipFallback } from '../../data/leadershipMessages';
+import { leadershipFallbacks, mergeLeadershipFallback } from '../../content/leadershipMessages';
 import { useAuth } from '../../hooks/useAuth';
 import {
   leadershipRoles,

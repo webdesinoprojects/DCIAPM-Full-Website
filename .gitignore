@@ -13,7 +13,6 @@ dist-ssr
 *.local
 
 # Editor directories and files
-.vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -30,7 +29,6 @@ src/docs/
 # Temporary extraction files
 tmp_*
 config.bat
-.env
 .env-share
 supabase/.temp
 
